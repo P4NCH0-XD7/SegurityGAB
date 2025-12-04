@@ -18,6 +18,8 @@ interface DbProduct {
   stock: number;
 }
 
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 export default function ProductGrid() {
   const [dbProducts, setDbProducts] = useState<DbProduct[]>([]);
 
@@ -31,7 +33,7 @@ export default function ProductGrid() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('http://localhost:3001/products');
+        const res = await fetch(`${BASE_API_URL}/products`);
         if (res.ok) {
           const data = await res.json();
           setDbProducts(data);
@@ -108,7 +110,7 @@ export default function ProductGrid() {
             modelo={product.name} 
             descripcion={product.description} 
             precio={product.price} 
-            imagen={`http://localhost:3001${product.image}`}
+            imagen={`${BASE_API_URL}${product.image}`}
 
           />
         ))}
