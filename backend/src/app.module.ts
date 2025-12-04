@@ -14,26 +14,29 @@ import { AuthModule } from './modules/auth/auth.module';
 
 import { AdminModule } from './modules/users/admin/admin.module';
 
+const dbRelatedModules =
+  process.env.DB_DISABLED === 'true'
+    ? []
+    : [
+        TypeOrmModule.forRoot({
+          type: 'mysql',
+          host: 'localhost',
+          port: 3306,
+          username: 'root',
+          password: 'Admin01@',
+          database: 'seguritygab',
+          entities: [User, Product],
+
+          synchronize: true, // cambia a false en producción
+          logging: true,
+        }),
+        UsersModule,
+        ProductsModule,
+        AdminModule,
+      ];
+
 @Module({
-  imports: [
-    AuthModule,
-
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: 'Admin01@',
-      database: 'SegurityGAB',
-      entities: [User, Product],
-
-      synchronize: true, // cambia a false en producción
-      logging: true,
-    }),
-    UsersModule,
-    ProductsModule,
-    AdminModule,
-  ],
+  imports: [AuthModule, ...dbRelatedModules],
   controllers: [AppController],
   providers: [AppService],
 })
