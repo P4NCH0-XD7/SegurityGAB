@@ -18,6 +18,7 @@ const dbRelatedModules =
   process.env.DB_DISABLED === 'true'
     ? []
     : [
+        AuthModule,
         TypeOrmModule.forRoot({
           type: 'mysql',
           host: 'localhost',
@@ -36,7 +37,7 @@ const dbRelatedModules =
       ];
 
 @Module({
-  imports: [AuthModule, ...dbRelatedModules],
+  imports: [...dbRelatedModules],
   controllers: [AppController],
   providers: [AppService],
 })
