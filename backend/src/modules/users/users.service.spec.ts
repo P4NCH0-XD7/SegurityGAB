@@ -82,4 +82,16 @@ describe('UsersService', () => {
     (repo.findOne as jest.Mock).mockResolvedValue(null);
     await expect(service.updateRole(123, 'admin')).rejects.toThrow('User not found');
   });
+
+  it('updateRole: actualiza role y guarda', async () => {
+    (repo.findOne as jest.Mock).mockResolvedValue({ id: 123, role: 'user' } as any);
+    (repo.save as jest.Mock).mockResolvedValue({ id: 123, role: 'admin' } as any);
+
+    await expect(service.updateRole(123, 'admin')).resolves.toEqual({
+      id: 123,
+      role: 'admin',
+    });
+
+    expect(repo.save).toHaveBeenCalledWith({ id: 123, role: 'admin' });
+  });
 });
