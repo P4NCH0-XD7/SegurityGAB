@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 // Entities
 import { User } from './modules/users/user_entity/user.entity';
@@ -33,7 +34,15 @@ const dbRelatedModules =
       ];
 
 @Module({
-  imports: [...dbRelatedModules],
+  imports: [
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
+    ...dbRelatedModules,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
