@@ -28,7 +28,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // 💾 Guardar carrito en localStorage cada vez que cambie
+  // Nota: si el carrito queda vacío, lo eliminamos para que "clearCart" realmente limpie el storage.
   useEffect(() => {
+    if (cart.length === 0) {
+      localStorage.removeItem("cart");
+      return;
+    }
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
