@@ -12,11 +12,15 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string) {
+    console.log('Login attempt for email:', email);
     const user = await this.usersService.findByEmail(email);
+    console.log('User found (or null):', user ? user.email : 'null');
     if (!user)
       throw new UnauthorizedException('Usuario o contraseña inválidos');
 
+    console.log('Comparing provided password (first 5 chars):', password.substring(0,5), 'with stored hash (first 5 chars):', user.password.substring(0,5));
     const valid = await bcrypt.compare(password, user.password);
+    console.log('Password comparison result (valid):', valid);
     if (!valid)
       throw new UnauthorizedException('Usuario o contraseña inválidos|');
 
