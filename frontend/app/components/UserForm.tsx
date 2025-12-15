@@ -7,6 +7,7 @@ export default function UserForm({ fetchUsers, editingItem }: any) {
     editingItem || { name: "", email: "", password: "", role: "user" }
   );
   const [loading, setLoading] = useState(false);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -18,8 +19,8 @@ export default function UserForm({ fetchUsers, editingItem }: any) {
     try {
       const method = editingItem ? "PUT" : "POST";
       const url = editingItem
-        ? `http://localhost:3001/admin/users/${editingItem.id}`
-        : "http://localhost:3001/admin/users";
+        ? `${apiUrl}/admin/users/${editingItem.id}`
+        : `${apiUrl}/admin/users`;
 
       await fetch(url, {
         method,
@@ -41,7 +42,7 @@ export default function UserForm({ fetchUsers, editingItem }: any) {
     if (!confirm("¿Seguro que quieres eliminar este usuario?")) return;
     setLoading(true);
     try {
-      await fetch(`http://localhost:3001/admin/users/${editingItem.id}`, {
+      await fetch(`${apiUrl}/admin/users/${editingItem.id}`, {
         method: "DELETE",
       });
       fetchUsers();

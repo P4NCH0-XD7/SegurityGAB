@@ -21,6 +21,7 @@ export default function DetailedProductPage() {
   const router = useRouter();
   const { id } = params;
   const { token } = useAuth();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   const [product, setProduct] = useState<ProductItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,7 @@ export default function DetailedProductPage() {
     if (id && token) {
       const fetchProduct = async () => {
         try {
-          const res = await fetch(`http://localhost:3001/products/${id}`, {
+          const res = await fetch(`${apiUrl}/products/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (!res.ok) {
@@ -46,7 +47,7 @@ export default function DetailedProductPage() {
       };
       fetchProduct();
     }
-  }, [id, token]);
+  }, [id, token, apiUrl]);
 
   if (loading) {
     return <p className="text-center mt-10">Cargando...</p>;

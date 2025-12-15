@@ -11,6 +11,7 @@ export default function FormLogin() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
     if (!email || !password) {
       alert("Debes ingresar email y contraseña");
       return;
@@ -19,7 +20,7 @@ export default function FormLogin() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:3001/auth/login", {
+      const res = await fetch(`${apiUrl}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
 

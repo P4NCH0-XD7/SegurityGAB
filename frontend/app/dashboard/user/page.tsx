@@ -24,6 +24,7 @@ interface WishlistItem {
 export default function DashboardModern() {
   const { user, token } = useAuth();
   const router = useRouter();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
@@ -40,7 +41,7 @@ export default function DashboardModern() {
   const fetchOrders = useCallback(async () => {
     try {
       setLoadingOrders(true);
-      const res = await fetch("http://localhost:3001/orders", {
+      const res = await fetch(`${apiUrl}/orders`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Error al obtener pedidos");
@@ -50,11 +51,11 @@ export default function DashboardModern() {
     } finally {
       setLoadingOrders(false);
     }
-  }, [token]);
+  }, [token, apiUrl]);
 
   const fetchWishlist = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:3001/wishlist", {
+      const res = await fetch(`${apiUrl}/wishlist`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Error al obtener lista de deseos");
@@ -62,7 +63,7 @@ export default function DashboardModern() {
     } catch (err: any) {
       setError(err.message);
     }
-  }, [token]);
+  }, [token, apiUrl]);
 
   useEffect(() => {
     if (token && user?.role === "user") {
@@ -260,7 +261,7 @@ export default function DashboardModern() {
                 wishlist.map((item) => (
                   <article key={item.id} className="rounded-lg bg-slate-50 overflow-hidden shadow-sm">
                     <div className="h-44 bg-gradient-to-b from-slate-100 to-white">
-                      <img src={`http://localhost:3001${item.image}`} alt={item.name} className="w-full h-full object-cover" />
+                      <img src={`${apiUrl}${item.image}`} alt={item.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="p-4">
                       <h3 className="font-medium text-sm">{item.name}</h3>

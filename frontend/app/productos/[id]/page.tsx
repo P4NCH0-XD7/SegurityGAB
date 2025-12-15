@@ -9,12 +9,13 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   useEffect(() => {
     if (id) {
       const fetchProduct = async () => {
         try {
-          const res = await fetch(`http://localhost:3001/products/${id}`);
+          const res = await fetch(`${apiUrl}/products/${id}`);
           if (!res.ok) {
             throw new Error(`Error: ${res.status}`);
           }
@@ -47,7 +48,7 @@ export default function ProductDetailPage() {
       <div className="flex flex-col md:flex-row gap-8">
         <div className="md:w-1/2">
           <img
-            src={`http://localhost:3001${product.image}`}
+            src={`${apiUrl}${product.image}`}
             alt={product.name}
             className="w-full h-auto object-cover rounded-lg shadow-md"
           />

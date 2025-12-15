@@ -29,6 +29,7 @@ interface ProductItem {
 export default function AdminDashboard() {
   const { user, token } = useAuth();
   const router = useRouter();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   const [items, setItems] = useState<UserItem[]>([]);
   const [products, setProducts] = useState<ProductItem[]>([]);
@@ -53,7 +54,7 @@ export default function AdminDashboard() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/admin/users", {
+      const res = await fetch(`${apiUrl}/admin/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Error al obtener usuarios");
@@ -71,7 +72,7 @@ export default function AdminDashboard() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/products", {
+      const res = await fetch(`${apiUrl}/products`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Error al obtener productos");
@@ -156,7 +157,7 @@ export default function AdminDashboard() {
         <div className={styles.productGrid}>
           {products.map((product) => (
             <div key={product.id} className={styles.productCard}>
-              <img src={`http://localhost:3001${product.image}`} alt={product.name} />
+              <img src={`${apiUrl}${product.image}`} alt={product.name} />
               <h3>{product.name}</h3>
               <p>{product.description}</p>
               <span>${product.price}</span>

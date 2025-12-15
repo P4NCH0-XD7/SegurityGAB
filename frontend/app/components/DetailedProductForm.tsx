@@ -9,16 +9,17 @@ export default function DetailedProductForm({ product, onComplete }: any) {
   const [preview, setPreview] = useState<string | null>(null);
   const [longDescription, setLongDescription] = useState("");
   const [model, setModel] = useState("");
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   useEffect(() => {
     if (product) {
       setLongDescription(product.long_description || "");
       setModel(product.model || "");
       if (product.image) {
-        setPreview(`http://localhost:3001${product.image}`);
+        setPreview(`${apiUrl}${product.image}`);
       }
     }
-  }, [product]);
+  }, [product, apiUrl]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -30,7 +31,7 @@ export default function DetailedProductForm({ product, onComplete }: any) {
         model: model,
       };
 
-      await fetch(`http://localhost:3001/products/${product.id}`, {
+      await fetch(`${apiUrl}/products/${product.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

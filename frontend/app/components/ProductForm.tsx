@@ -13,20 +13,21 @@ export default function ProductForm({
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   useEffect(() => {
 
     if (editingItem) {
       setForm(editingItem);
       if (editingItem.image) {
-        setPreview(`http://localhost:3001${editingItem.image}`);
+        setPreview(`${apiUrl}${editingItem.image}`);
       }
     } else {
       setForm({ name: "", description: "", price: "", stock: "", image: "" });
       setPreview(null);
 
     }
-  }, [editingItem]);
+  }, [editingItem, apiUrl]);
 
   const handleChange = (e: any) => {
     if (e.target.name === "imageFile") {
@@ -50,7 +51,7 @@ export default function ProductForm({
         const formData = new FormData();
         formData.append("file", selectedFile);
 
-        const uploadRes = await fetch("http://localhost:3001/products/upload", {
+        const uploadRes = await fetch(`${apiUrl}/products/upload`, {
           method: "POST",
           body: formData,
         });
@@ -67,8 +68,8 @@ export default function ProductForm({
 
       const method = editingItem ? "PUT" : "POST";
       const url = editingItem
-        ? `http://localhost:3001/products/${editingItem.id}`
-        : "http://localhost:3001/products";
+        ? `${apiUrl}/products/${editingItem.id}`
+        : `${apiUrl}/products`;
 
       await fetch(url, {
         method,
@@ -95,7 +96,7 @@ export default function ProductForm({
     if (!confirm("¿Seguro que quieres eliminar este producto?")) return;
     setLoading(true);
     try {
-      await fetch(`http://localhost:3001/products/${editingItem.id}`, {
+      await fetch(`${apiUrl}/products/${editingItem.id}`, {
         method: "DELETE",
       });
       fetchProducts();

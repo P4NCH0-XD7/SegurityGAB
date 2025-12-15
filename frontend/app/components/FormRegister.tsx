@@ -11,6 +11,7 @@ export default function FormRegister() {
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -30,7 +31,7 @@ export default function FormRegister() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/auth/register", {
+      const res = await fetch(`${apiUrl}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
