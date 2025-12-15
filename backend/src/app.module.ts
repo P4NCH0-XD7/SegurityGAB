@@ -14,22 +14,15 @@ import { AuthModule } from './modules/auth/auth.module';
 
 import { AdminModule } from './modules/users/admin/admin.module';
 
+import { typeOrmConfig } from '../config/typeorm.config';
+
 const dbRelatedModules =
   process.env.DB_DISABLED === 'true'
     ? []
     : [
         AuthModule,
-        TypeOrmModule.forRoot({
-          type: 'mysql',
-          host: 'localhost',
-          port: 3306,
-          username: 'root',
-          password: 'Admin01@',
-          database: 'seguritygab',
-          entities: [User, Product],
-
-          synchronize: true, // cambia a false en producción
-          logging: true,
+        TypeOrmModule.forRootAsync({
+          useFactory: () => typeOrmConfig,
         }),
         UsersModule,
         ProductsModule,
