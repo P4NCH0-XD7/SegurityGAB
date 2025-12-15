@@ -12,7 +12,10 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://segurity-3ok9910u4-ivans-projects-efaddcf1.vercel.app'],
+    origin: [
+      'http://localhost:3000',
+      new RegExp(/^https:\/\/segurity-.*\.vercel\.app$/),
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
