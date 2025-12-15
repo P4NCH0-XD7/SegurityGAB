@@ -13,14 +13,17 @@ export class UsersService {
   ) {}
 
   async createUser(dto: CreateUserDto): Promise<User> {
-    const { role, ...rest } = dto;
-    const hashedPassword = await bcrypt.hash(rest.password, 10);
+    const { role, password, ...rest } = dto;
+    console.log('createUser: Received plain password (first 5 chars):', password.substring(0,5));
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('createUser: Generated hash (first 5 chars):', hashedPassword.substring(0,5));
 
     const user = this.usersRepository.create({
       ...rest,
       password: hashedPassword,
       role: role ?? 'user', // si no envían role, se asigna "user"
     });
+    console.log('createUser: Saving user with hash (first 5 chars):', hashedPassword.substring(0,5));
 
     return this.usersRepository.save(user);
   }
