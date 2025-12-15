@@ -22,7 +22,10 @@ const dbRelatedModules =
     : [
         AuthModule,
         TypeOrmModule.forRootAsync({
-          useFactory: () => typeOrmConfig,
+          useFactory: () => ({
+            ...typeOrmConfig,
+            autoLoadEntities: true,
+          }),
         }),
         UsersModule,
         ProductsModule,
