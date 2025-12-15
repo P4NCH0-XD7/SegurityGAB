@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const backendUrl = process.env.BACKEND_URL || 'https://seguritygab-backend.onrender.com';
+
 const securityHeaders = [
   // Evita que carguen tu web en iframes -> protege contra clickjacking
   {
@@ -18,8 +20,8 @@ const securityHeaders = [
       default-src 'self';
       script-src 'self' 'unsafe-inline';
       style-src 'self' 'unsafe-inline';
-      img-src 'self' https://seguritygab-backend.onrender.com data:;
-      connect-src 'self' https://seguritygab-backend.onrender.com;
+      img-src 'self' ${backendUrl} data:;
+      connect-src 'self' ${backendUrl};
       font-src 'self';
       object-src 'none';
       base-uri 'self';
