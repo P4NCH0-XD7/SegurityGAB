@@ -1,0 +1,28 @@
+config:
+  target: "{{ $processEnvironment.TARGET_URL }}"
+  phases:
+    - duration: 60
+      arrivalRate: 8
+      rampTo: 9
+      maxVusers: 100
+      name: orders_load
+  defaults:
+    headers:
+      content-type: application/json
+  ensure:
+    thresholds:
+      - http.response_time.p95: 1200
+      - errors.rate: 0.02
+
+scenarios:
+  - name: create and list orders
+    flow:
+      - post:
+          url: "/orders"
+          json:
+            customerEmail: "load_{{ $randomNumber(1, 1000000) }}@example.com"
+            status: "created"
+            total: 10.5
+            items: "[]"
+      - get:
+          url: "/orders"

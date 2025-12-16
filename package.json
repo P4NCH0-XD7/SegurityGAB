@@ -1,12 +1,25 @@
 {
+  "scripts": {
+    "test:unit": "jest backend/tests/unit",
+    "test:functional": "jest backend/tests/functional",
+    "test:e2e": "playwright test backend/tests/e2e",
+    "test:load": "artillery run backend/tests/load/login-load.yml",
+    "test:blackbox": "playwright test backend/tests/blackbox frontend/tests/blackbox"
+  },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/jest": "^30.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "artillery": "^2.0.23",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.37.0",
     "eslint-config-next": "^15.5.4",
+    "jest": "^30.0.0",
     "postcss": "^8.5.6",
+    "reflect-metadata": "^0.2.2",
     "tailwindcss": "^4.1.14",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.9.3"
   },
   "dependencies": {

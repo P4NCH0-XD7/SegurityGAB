@@ -43,7 +43,9 @@ export class ProductsController {
       }),
     }),
   )
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
+  // NOTE: We keep this type loose to avoid TS namespace issues in environments
+  // where Express/Multer global types are not available.
+  uploadFile(@UploadedFile() file: any) {
     return {
       path: `/uploads/${file.filename}`,
     };

@@ -1,0 +1,18 @@
+config:
+  target: "{{ $processEnvironment.TARGET_URL }}"
+  phases:
+    - duration: 60
+      arrivalRate: 8
+      rampTo: 9
+      maxVusers: 100
+      name: products_load
+  ensure:
+    thresholds:
+      - http.response_time.p95: 800
+      - errors.rate: 0.01
+
+scenarios:
+  - name: list products
+    flow:
+      - get:
+          url: "/products"

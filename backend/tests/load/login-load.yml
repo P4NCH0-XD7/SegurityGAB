@@ -1,0 +1,26 @@
+config:
+  target: "{{ $processEnvironment.TARGET_URL }}"
+  phases:
+    # ~500 req/min: ramp 8 -> 9 rps over 60s (avg 8.5 rps ~= 510 rpm)
+    - duration: 60
+      arrivalRate: 8
+      rampTo: 9
+      maxVusers: 100
+      name: login_load
+  defaults:
+    headers:
+      content-type: application/json
+  ensure:
+    thresholds:
+      - http.response_time.p95: 1000
+      - errors.rate: 0.02
+
+scenarios:
+  - name: login
+    flow:
+      # Requires a pre-existing user in the target environment.
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ $processEnvironment.TEST_EMAIL }}"
+            password: "{{ $processEnvironment.TEST_PASSWORD }}"

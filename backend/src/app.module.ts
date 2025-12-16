@@ -1,18 +1,20 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { AppService } = require("./app.service");
+import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throottler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
 // Entities
 import { User } from './modules/users/user_entity/user.entity';
 import { Product } from './modules/products/products_entity/product_entity';
+import { Order } from './modules/orders/orders_entity/order.entity';
 
 // Modules
 import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 import { AdminModule } from './modules/users/admin/admin.module';
 
@@ -31,6 +33,7 @@ const dbRelatedModules =
         }),
         UsersModule,
         ProductsModule,
+        OrdersModule,
         AdminModule,
       ];
 
