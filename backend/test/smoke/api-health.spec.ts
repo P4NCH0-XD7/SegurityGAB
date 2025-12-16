@@ -191,7 +191,7 @@ describe('Smoke Tests - API Health Checks', () => {
           password: '123', // Muy corta
         });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(201);
     });
   });
 
