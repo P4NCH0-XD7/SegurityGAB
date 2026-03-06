@@ -1,98 +1,233 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🛡️ SegurityGAB
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+> Plataforma web responsive para la comercialización de equipos de seguridad electrónica.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+##  Tabla de Contenidos
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [Descripción](#descripción)
+- [Arquitectura](#arquitectura)
+- [Tech Stack](#tech-stack)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Requisitos Previos](#requisitos-previos)
+- [Instalación](#instalación)
+- [Variables de Entorno](#variables-de-entorno)
+- [Base de Datos](#base-de-datos)
+- [Scripts Disponibles](#scripts-disponibles)
+- [Testing](#testing)
+- [Despliegue](#despliegue)
+- [Convenciones](#convenciones)
+- [Contribución](#contribución)
+- [Licencia](#licencia)
 
-## Project setup
+---
 
-```bash
-$ npm install
+## Descripción
+
+**SegurityGAB** es un sistema full-stack de comercio electrónico especializado en equipos de seguridad electrónica. Permite la gestión integral de productos, inventario, clientes, proveedores, ventas y usuarios con control de roles.
+
+### Módulos Funcionales
+
+| Módulo | Descripción |
+|---|---|
+| Autenticación | Login, registro, JWT, recuperación de contraseña |
+| Usuarios y Roles | CRUD de usuarios con control de acceso por roles |
+| Productos | Catálogo completo con imágenes y categorización |
+| Categorías | Clasificación jerárquica de productos |
+| Inventario | Control de stock con alertas automáticas |
+| Clientes | Gestión de clientes registrados |
+| Proveedores | Directorio de proveedores |
+| Ventas | Proceso de venta con estados |
+| Detalle de Ventas | Líneas de productos por venta |
+| Carrito | Carrito de compras temporal |
+| Wishlist | Lista de deseos por usuario |
+| Perfil | Gestión de perfil personal |
+| Carga de Imágenes | Upload y gestión de assets |
+| Alertas de Stock | Notificaciones de inventario bajo |
+| Reportes | Métricas de ventas e inventario |
+
+---
+
+## Arquitectura
+
+El sistema sigue el patrón **MVC (Model-View-Controller)** tanto en frontend como en backend, con separación clara de responsabilidades:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        CLIENTE                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │              Frontend (Next.js / Vercel)              │  │
+│  │  View ←→ Controller (Hooks) ←→ Model (State/Types)   │  │
+│  └──────────────────────┬────────────────────────────────┘  │
+│                         │ HTTP/HTTPS (REST API)             │
+│  ┌──────────────────────▼────────────────────────────────┐  │
+│  │              Backend (NestJS / AWS)                    │  │
+│  │  Controller ←→ Service ←→ Repository ←→ Entity (DB)   │  │
+│  └──────────────────────┬────────────────────────────────┘  │
+│                         │ TypeORM                           │
+│  ┌──────────────────────▼────────────────────────────────┐  │
+│  │              Base de Datos (MySQL)                     │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## Tech Stack
 
-# watch mode
-$ npm run start:dev
+| Capa | Tecnología |
+|---|---|
+| Frontend | Next.js 14+ (App Router), TypeScript, Zustand |
+| Backend | NestJS 11, TypeScript, TypeORM |
+| Base de Datos | MySQL 8.0 |
+| Autenticación | JWT + Bcrypt + Cookies HttpOnly |
+| Validación | class-validator, class-transformer |
+| Testing | Jest, React Testing Library, Supertest |
+| Deploy Frontend | Vercel |
+| Deploy Backend | AWS (EC2 / ECS) |
+| Almacenamiento | AWS S3 (imágenes) |
 
-# production mode
-$ npm run start:prod
+---
+
+## Estructura del Proyecto
+
+```
+SegurityGAB/
+├── frontend/          # Aplicación Next.js
+├── backend/           # API REST NestJS
+├── database/          # Scripts SQL para MySQL Workbench
+├── docs/              # Documentación técnica
+├── .gitignore
+└── README.md
 ```
 
-## Run tests
+> Ver cada directorio para documentación específica.
+
+---
+
+## Requisitos Previos
+
+- Node.js >= 18.x
+- npm >= 9.x
+- MySQL >= 8.0
+- MySQL Workbench (para modelado)
+- Git
+
+---
+
+## Instalación
 
 ```bash
-# unit tests
-$ npm run test
+# Clonar el repositorio
+git clone https://github.com/tu-usuario/SegurityGAB.git
+cd SegurityGAB
 
-# e2e tests
-$ npm run test:e2e
+# Instalar dependencias del backend
+cd backend
+npm install
 
-# test coverage
-$ npm run test:cov
+# Instalar dependencias del frontend
+cd ../frontend
+npm install
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Variables de Entorno
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Backend (`backend/.env`)
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=your_password
+DB_NAME=seguritygab
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRATION=24h
+CORS_ORIGIN=http://localhost:3000
+AWS_S3_BUCKET=seguritygab-uploads
+AWS_REGION=us-east-1
+```
 
+### Frontend (`frontend/.env.local`)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+NEXT_PUBLIC_APP_NAME=SegurityGAB
+```
+
+---
+
+## Base de Datos
+
+Los scripts SQL se encuentran en `/database` y deben ejecutarse en MySQL Workbench en el siguiente orden:
+
+1. `schema/` — Creación de tablas y relaciones
+2. `seeds/` — Datos iniciales (roles, admin)
+3. `scripts/triggers/` — Triggers automáticos
+4. `scripts/procedures/` — Procedimientos almacenados
+
+---
+
+## Scripts Disponibles
+
+### Backend
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run start:dev     # Desarrollo con hot-reload
+npm run build         # Compilar para producción
+npm run start:prod    # Ejecutar producción
+npm run test          # Tests unitarios
+npm run test:e2e      # Tests de integración
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Frontend
+```bash
+npm run dev           # Desarrollo con hot-reload
+npm run build         # Compilar para producción
+npm run start         # Ejecutar producción local
+npm run test          # Tests unitarios
+npm run lint          # Linting
+```
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Testing
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- **Unit Tests**: Ubicados junto a los archivos (`*.spec.ts`) o en `/tests/unit`
+- **E2E Tests**: Ubicados en `/tests/e2e`
+- **Coverage**: `npm run test:cov`
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Despliegue
 
-## Stay in touch
+| Componente | Plataforma | Método |
+|---|---|---|
+| Frontend | Vercel | Git push → Auto deploy |
+| Backend | AWS EC2 | CI/CD con GitHub Actions |
+| Base de Datos | AWS RDS / Local | Scripts SQL manuales |
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+---
 
-## License
+## Convenciones
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- **Archivos**: `kebab-case` (backend), `PascalCase` para componentes (frontend)
+- **Clases**: `PascalCase`
+- **Variables/Funciones**: `camelCase`
+- **Tablas BD**: `snake_case` plural
+- **Columnas BD**: `snake_case` singular
+- **Commits**: Conventional Commits (`feat:`, `fix:`, `docs:`, etc.)
+- **Ramas**: `feature/`, `fix/`, `hotfix/`, `release/`
+
+---
+
+## Contribución
+
+1. Fork el proyecto
+2. Crear rama (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit (`git commit -m 'feat: agregar nueva funcionalidad'`)
+4. Push (`git push origin feature/nueva-funcionalidad`)
+5. Pull Request
+
+---
+
