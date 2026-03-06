@@ -1,27 +1,5 @@
-# 🛡️ SegurityGAB
+# SegurityGAB
 
-> Plataforma web responsive para la comercialización de equipos de seguridad electrónica.
-
----
-
-##  Tabla de Contenidos
-
-- [Descripción](#descripción)
-- [Arquitectura](#arquitectura)
-- [Tech Stack](#tech-stack)
-- [Estructura del Proyecto](#estructura-del-proyecto)
-- [Requisitos Previos](#requisitos-previos)
-- [Instalación](#instalación)
-- [Variables de Entorno](#variables-de-entorno)
-- [Base de Datos](#base-de-datos)
-- [Scripts Disponibles](#scripts-disponibles)
-- [Testing](#testing)
-- [Despliegue](#despliegue)
-- [Convenciones](#convenciones)
-- [Contribución](#contribución)
-- [Licencia](#licencia)
-
----
 
 ## Descripción
 
@@ -83,7 +61,6 @@ El sistema sigue el patrón **MVC (Model-View-Controller)** tanto en frontend co
 | Base de Datos | MySQL 8.0 |
 | Autenticación | JWT + Bcrypt + Cookies HttpOnly |
 | Validación | class-validator, class-transformer |
-| Testing | Jest, React Testing Library, Supertest |
 | Deploy Frontend | Vercel |
 | Deploy Backend | AWS (EC2 / ECS) |
 | Almacenamiento | AWS S3 (imágenes) |
@@ -102,9 +79,7 @@ SegurityGAB/
 └── README.md
 ```
 
-> Ver cada directorio para documentación específica.
 
----
 
 ## Requisitos Previos
 
@@ -120,7 +95,7 @@ SegurityGAB/
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/tu-usuario/SegurityGAB.git
+git clone 
 cd SegurityGAB
 
 # Instalar dependencias del backend
@@ -141,18 +116,15 @@ npm install
 DB_HOST=localhost
 DB_PORT=3306
 DB_USERNAME=root
-DB_PASSWORD=your_password
+DB_PASSWORD=
 DB_NAME=seguritygab
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRATION=24h
-CORS_ORIGIN=http://localhost:3000
-AWS_S3_BUCKET=seguritygab-uploads
-AWS_REGION=us-east-1
+JWT_SECRET=y
+
 ```
 
 ### Frontend (`frontend/.env.local`)
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
 NEXT_PUBLIC_APP_NAME=SegurityGAB
 ```
 
@@ -164,8 +136,6 @@ Los scripts SQL se encuentran en `/database` y deben ejecutarse en MySQL Workben
 
 1. `schema/` — Creación de tablas y relaciones
 2. `seeds/` — Datos iniciales (roles, admin)
-3. `scripts/triggers/` — Triggers automáticos
-4. `scripts/procedures/` — Procedimientos almacenados
 
 ---
 
@@ -173,61 +143,16 @@ Los scripts SQL se encuentran en `/database` y deben ejecutarse en MySQL Workben
 
 ### Backend
 ```bash
-npm run start:dev     # Desarrollo con hot-reload
+npm run start:dev     # Desarrollo 
 npm run build         # Compilar para producción
 npm run start:prod    # Ejecutar producción
-npm run test          # Tests unitarios
-npm run test:e2e      # Tests de integración
 ```
 
 ### Frontend
 ```bash
-npm run dev           # Desarrollo con hot-reload
+npm run dev           # Desarrollo 
 npm run build         # Compilar para producción
 npm run start         # Ejecutar producción local
-npm run test          # Tests unitarios
-npm run lint          # Linting
+
 ```
-
----
-
-## Testing
-
-- **Unit Tests**: Ubicados junto a los archivos (`*.spec.ts`) o en `/tests/unit`
-- **E2E Tests**: Ubicados en `/tests/e2e`
-- **Coverage**: `npm run test:cov`
-
----
-
-## Despliegue
-
-| Componente | Plataforma | Método |
-|---|---|---|
-| Frontend | Vercel | Git push → Auto deploy |
-| Backend | AWS EC2 | CI/CD con GitHub Actions |
-| Base de Datos | AWS RDS / Local | Scripts SQL manuales |
-
----
-
-## Convenciones
-
-- **Archivos**: `kebab-case` (backend), `PascalCase` para componentes (frontend)
-- **Clases**: `PascalCase`
-- **Variables/Funciones**: `camelCase`
-- **Tablas BD**: `snake_case` plural
-- **Columnas BD**: `snake_case` singular
-- **Commits**: Conventional Commits (`feat:`, `fix:`, `docs:`, etc.)
-- **Ramas**: `feature/`, `fix/`, `hotfix/`, `release/`
-
----
-
-## Contribución
-
-1. Fork el proyecto
-2. Crear rama (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit (`git commit -m 'feat: agregar nueva funcionalidad'`)
-4. Push (`git push origin feature/nueva-funcionalidad`)
-5. Pull Request
-
----
 
