@@ -1,9 +1,3 @@
-// ===========================================
-// Database Module
-// ===========================================
-// Configures TypeORM connection to MySQL using
-// environment variables from ConfigModule.
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';

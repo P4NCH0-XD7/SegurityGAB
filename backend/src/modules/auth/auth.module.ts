@@ -1,9 +1,3 @@
-// ===========================================
-// Auth Module
-// ===========================================
-// Handles user authentication: login, register,
-// password recovery, and JWT token management.
-
 import { Module } from '@nestjs/common';
 // import { JwtModule } from '@nestjs/jwt';
 // import { PassportModule } from '@nestjs/passport';

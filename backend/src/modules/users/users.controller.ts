@@ -4,17 +4,20 @@
 // HTTP routes for user management:
 // GET, POST, PUT, DELETE /users
 
-import { Controller } from '@nestjs/common';
-// import { UsersService } from './users.service';
+import { Controller, Get } from '@nestjs/common'; // Agregado 'Get'
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
-    // constructor(private readonly usersService: UsersService) {}
+    constructor(private readonly usersService: UsersService) {}
 
-    // @Get()
+    @Get()
+    // La seguridad se añadirá en un paso posterior
     // @UseGuards(JwtAuthGuard, RolesGuard)
     // @Roles('admin')
-    // async findAll() {}
+    async findAll() {
+        return this.usersService.findAll();
+    }
 
     // @Get(':id')
     // async findById(@Param('id') id: number) {}

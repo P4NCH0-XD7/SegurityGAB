@@ -4,13 +4,26 @@
 // Business logic for user management operations.
 
 import { Injectable } from '@nestjs/common';
-// import { UsersRepository } from './users.repository';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './entities/user.entity';
+// import { UsersRepository } from './users.repository'; // Ya no usamos el genérico, usamos el de TypeORM
 
 @Injectable()
 export class UsersService {
-    // constructor(private readonly usersRepository: UsersRepository) {}
+    constructor(
+        @InjectRepository(User)
+        private readonly userRepository: Repository<User>,
+    ) {}
 
-    // async findAll() {}
+    /**
+     * Retrieves all users from the database.
+     * @returns {Promise<User[]>} A list of all users.
+     */
+    async findAll(): Promise<User[]> {
+        return this.userRepository.find();
+    }
+
     // async findById(id: number) {}
     // async findByEmail(email: string) {}
     // async create(createUserDto: CreateUserDto) {}
