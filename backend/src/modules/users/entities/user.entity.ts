@@ -7,7 +7,7 @@ import {
     Index,
 } from 'typeorm';
 
-@Entity({ name: 'users' }) // Le dice a TypeORM que esta clase es una tabla llamada 'users'
+@Entity({ name: 'users' })
 export class User {
     @PrimaryGeneratedColumn()
     id: number;
@@ -22,7 +22,7 @@ export class User {
     passwordHash: string;
 
     @Column({ name: 'role_id', type: 'int' })
-    roleId: number; // Por ahora es un número, en el futuro se puede conectar a una entidad Role
+    roleId: number; // Por ahora es un numero, en el futuro se puede conectar a una entidad Role
 
     @Column({ name: 'is_active', type: 'boolean', default: true })
     isActive: boolean;

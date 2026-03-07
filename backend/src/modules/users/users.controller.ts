@@ -1,36 +1,37 @@
-// ===========================================
-// Users Controller
-// ===========================================
-// HTTP routes for user management:
-// GET, POST, PUT, DELETE /users
-
-import { Controller, Get } from '@nestjs/common'; // Agregado 'Get'
+import { Controller, Get, Post, Body, HttpStatus, HttpCode, Param, Patch, Delete } from '@nestjs/common'; // Agregado Delete
 import { UsersService } from './users.service';
+import { CreateUserDto, UpdateUserDto } from './dto';
 
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 
     @Get()
-    // La seguridad se añadirá en un paso posterior
-    // @UseGuards(JwtAuthGuard, RolesGuard)
-    // @Roles('admin')
     async findAll() {
         return this.usersService.findAll();
     }
 
-    // @Get(':id')
-    // async findById(@Param('id') id: number) {}
+    @Post()
+    @HttpCode(HttpStatus.CREATED) //asegura que la respuesta tenga el codigo 201 en lugar de 200
+    async create(@Body() createUserDto: CreateUserDto) {
+        return this.usersService.create(createUserDto);
+    }
 
-    // @Post()
-    // async create(@Body() createUserDto: CreateUserDto) {}
+    @Get(':id')
+    async findById(@Param('id') id: number) {
+        return this.usersService.findById(+id); //+id convierte el string a número
+    }
 
-    // @Put(':id')
-    // async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {}
+    @Patch(':id')
+    async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
+        return this.usersService.update(+id, updateUserDto);
+    }
 
-    // @Delete(':id')
-    // @Roles('admin')
-    // async delete(@Param('id') id: number) {}
+    @Delete(':id')
+    @HttpCode(HttpStatus.NO_CONTENT) // 204 No Content para indicar eliminación exitosa sin contenido
+    async remove(@Param('id') id: number) {
+        await this.usersService.remove(+id);
+    }
 
     // @Put(':id/profile')
     // async updateProfile(@Param('id') id: number, @Body() profileData: any) {}
