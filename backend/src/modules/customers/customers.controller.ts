@@ -3,14 +3,37 @@
 // ===========================================
 // HTTP routes for customers: GET, POST, PUT, DELETE /customers
 
-import { Controller } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, ParseIntPipe } from '@nestjs/common';
+import { CustomersService } from './customers.service';
+import { CreateCustomerDto } from './dto/create-customer.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 
 @Controller('customers')
 export class CustomersController {
-  // constructor(private readonly service: CustomersService) {}
-  // @Get() findAll() {}
-  // @Get(':id') findById() {}
-  // @Post() create() {}
-  // @Put(':id') update() {}
-  // @Delete(':id') remove() {}
+  constructor(private readonly customersService: CustomersService) {}
+
+  @Get()
+  findAll() {
+    return this.customersService.findAll();
+  }
+
+  @Get(':id')
+  findById(@Param('id', ParseIntPipe) id: number) {
+    return this.customersService.findById(id);
+  }
+
+  @Post()
+  create(@Body() createCustomerDto: CreateCustomerDto) {
+    return this.customersService.create(createCustomerDto);
+  }
+
+  @Patch(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateCustomerDto: UpdateCustomerDto) {
+    return this.customersService.update(id, updateCustomerDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.customersService.remove(id);
+  }
 }

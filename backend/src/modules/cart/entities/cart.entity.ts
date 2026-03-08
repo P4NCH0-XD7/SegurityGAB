@@ -17,6 +17,6 @@ export class Cart {
   updated_at!: Date;
 
   @OneToMany(() => CartItem, item => item.cart)
-  items: CartItem[] = [];
+  items: CartItem[];
 
 }
