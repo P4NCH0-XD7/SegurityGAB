@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 // Feature Modules (import as needed)
 // import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { CartModule } from './modules/cart/cart.module';
 // import { ProductsModule } from './modules/products/products.module';
 // import { CategoriesModule } from './modules/categories/categories.module';
 // import { InventoryModule } from './modules/inventory/inventory.module';
@@ -32,6 +33,7 @@ import { DatabaseModule } from './database/database.module';
         // Feature modules
         // AuthModule,
         UsersModule,
+        CartModule,
         // ProductsModule,
         // CategoriesModule,
         // InventoryModule,
