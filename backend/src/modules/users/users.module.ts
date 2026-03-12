@@ -3,25 +3,25 @@
 // ===========================================
 
 import { Module } from '@nestjs/common';
-// import { TypeOrmModule } from '@nestjs/typeorm';
-// import { UsersController } from './users.controller';
-// import { UsersService } from './users.service';
-// import { UsersRepository } from './users.repository';
-// import { UserEntity } from './entities/user.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersController } from './users.controller';
+import { UsersService } from './users.service';
+import { UsersRepository } from './users.repository';
+import { User } from './entities/user.entity';
 
 @Module({
     imports: [
-        // TypeOrmModule.forFeature([UserEntity]),
+        TypeOrmModule.forFeature([User]),
     ],
     controllers: [
-        // UsersController,
+        UsersController,
     ],
     providers: [
-        // UsersService,
-        // UsersRepository,
+        UsersService,
+        UsersRepository,
     ],
     exports: [
-        // UsersService,
+        UsersService,
     ],
 })
 export class UsersModule { }

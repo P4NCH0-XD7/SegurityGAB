@@ -1,15 +1,10 @@
-// ===========================================
-// SegurityGAB - Root Application Module
-// ===========================================
-// Central module that imports all feature modules,
-// global configuration, and database connection.
-
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 // Feature Modules (import as needed)
 // import { AuthModule } from './modules/auth/auth.module';
-// import { UsersModule } from './modules/users/users.module';
+import { UsersModule } from './modules/users/users.module';
+import { CartModule } from './modules/cart/cart.module';
 // import { ProductsModule } from './modules/products/products.module';
 // import { CategoriesModule } from './modules/categories/categories.module';
 // import { InventoryModule } from './modules/inventory/inventory.module';
@@ -22,7 +17,7 @@ import { ConfigModule } from '@nestjs/config';
 // import { ReportsModule } from './modules/reports/reports.module';
 
 // Database
-// import { DatabaseModule } from './database/database.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
     imports: [
@@ -33,11 +28,12 @@ import { ConfigModule } from '@nestjs/config';
         }),
 
         // Database connection
-        // DatabaseModule,
+        DatabaseModule,
 
         // Feature modules
         // AuthModule,
-        // UsersModule,
+        UsersModule,
+        CartModule,
         // ProductsModule,
         // CategoriesModule,
         // InventoryModule,
