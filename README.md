@@ -1,4 +1,4 @@
-# 🛡️ SegurityGAB
+# SegurityGAB
 
 
 ## Descripción
@@ -60,6 +60,11 @@ El sistema sigue el patrón **MVC (Model-View-Controller)** tanto en frontend co
 | Backend | NestJS 11, TypeScript, TypeORM |
 | Base de Datos | MySQL 8.0 |
 | Autenticación | JWT + Bcrypt + Cookies HttpOnly |
+| Validación | class-validator, class-transformer |
+| Deploy Frontend | Vercel |
+| Deploy Backend | AWS (EC2 / ECS) |
+| Almacenamiento | AWS S3 (imágenes) |
+
 ---
 
 ## Estructura del Proyecto
@@ -73,7 +78,6 @@ SegurityGAB/
 ├── .gitignore
 └── README.md
 ```
-
 
 ## Requisitos Previos
 
@@ -111,8 +115,8 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_USERNAME=root
 DB_PASSWORD=
-DB_NAME=
-JWT_SECRET=
+DB_NAME=seguritygab
+JWT_SECRET=y
 JWT_EXPIRATION=
 
 ```
@@ -130,7 +134,7 @@ NEXT_PUBLIC_APP_NAME=SegurityGAB
 Los scripts SQL se encuentran en `/database` y deben ejecutarse en MySQL Workbench en el siguiente orden:
 
 1. `schema/` — Creación de tablas y relaciones
-
+2. `seeds/` — Datos iniciales (roles, admin)
 
 ---
 
@@ -141,8 +145,6 @@ Los scripts SQL se encuentran en `/database` y deben ejecutarse en MySQL Workben
 npm run start:dev     # Desarrollo 
 npm run build         # Compilar para producción
 npm run start:prod    # Ejecutar producción
-npm run test          # Tests unitarios
-npm run test:e2e      # Tests de integración
 ```
 
 ### Frontend
@@ -162,5 +164,4 @@ npm run start         # Ejecutar producción local
 | Base de Datos | AWS RDS / Local | Scripts SQL manuales |
 
 ---
-
 
