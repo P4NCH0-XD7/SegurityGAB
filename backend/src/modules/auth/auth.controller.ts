@@ -1,29 +1,27 @@
-// ===========================================
-// Auth Controller
-// ===========================================
-// Handles HTTP routes for authentication:
-// POST /auth/login, POST /auth/register,
-// POST /auth/forgot-password, POST /auth/reset-password
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { AuthService } from './auth.service';
+import { LoginDto, RegisterDto } from './dto/auth.dto';
 
-import { Controller } from '@nestjs/common';
-// import { AuthService } from './auth.service';
-
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-    // constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
-    // @Post('login')
-    // async login(@Body() loginDto: LoginDto) {}
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Iniciar sesión' })
+  @ApiResponse({ status: 200, description: 'Login exitoso' })
+  @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
+  }
 
-    // @Post('register')
-    // async register(@Body() registerDto: RegisterDto) {}
-
-    // @Post('forgot-password')
-    // async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {}
-
-    // @Post('reset-password')
-    // async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {}
-
-    // @Post('refresh-token')
-    // async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {}
+  @Post('register')
+  @ApiOperation({ summary: 'Registrar nuevo usuario' })
+  @ApiResponse({ status: 201, description: 'Usuario creado' })
+  @ApiResponse({ status: 409, description: 'Email ya registrado' })
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
 }

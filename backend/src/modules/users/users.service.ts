@@ -106,6 +106,10 @@ export class UsersService {
      * @returns {Promise<void>}
      * @throws {NotFoundException} If the user with the specified ID is not found.
      */
+    async findByEmail(email: string): Promise<User | null> {
+        return this.userRepository.findOne({ where: { email } });
+    }
+
     async remove(id: number): Promise<void> {
         const userToRemove = await this.findById(id); // Reutiliza findById para verificar existencia y lanzar excepción
         await this.userRepository.remove(userToRemove);
