@@ -1,10 +1,22 @@
+// ===========================================
+// SegurityGAB — Auth Module
+// ===========================================
+
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from '../users/users.module';
+
+// Strategy
+import { JwtStrategy } from './strategies/jwt.strategy';
+
+// Guards
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [
@@ -15,12 +27,25 @@ import { UsersModule } from '../users/users.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'super-secret-key-12345',
-        signOptions: { expiresIn: '1d' },
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRATION') || '1d',
+        },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
-  exports: [AuthService, PassportModule, JwtModule],
+  providers: [
+    AuthService,
+    JwtStrategy,   // Registra la estrategia JWT con Passport
+    JwtAuthGuard,  // Disponible para inyección si se necesita
+    RolesGuard,    // Disponible para inyección si se necesita
+  ],
+  exports: [
+    AuthService,
+    JwtAuthGuard,
+    RolesGuard,
+    PassportModule,
+    JwtModule,
+  ],
 })
 export class AuthModule {}
