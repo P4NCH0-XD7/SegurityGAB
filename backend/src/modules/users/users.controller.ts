@@ -1,38 +1,98 @@
-import { Controller, Get, Post, Body, HttpStatus, HttpCode, Param, Patch, Delete } from '@nestjs/common'; // Agregado Delete
+// ===========================================
+// SegurityGAB — Users Controller
+// ===========================================
+// Todos los endpoints requieren JWT.
+// Solo Admin (roleId=1) puede listar todos los usuarios,
+// crear usuarios directamente y eliminar usuarios.
+// Un usuario autenticado puede ver/editar su propio perfil.
+
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  HttpStatus,
+  HttpCode,
+  Param,
+  Patch,
+  Delete,
+  UseGuards,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from './dto';
 
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles, Role } from '../auth/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+
+@ApiTags('users')
+@ApiBearerAuth()                       // Indica en Swagger que requiere Bearer token
+@UseGuards(JwtAuthGuard, RolesGuard)   // Protege TODO el controlador con JWT
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) {}
 
-    @Get()
-    async findAll() {
-        return this.usersService.findAll();
-    }
+  // ----- Solo Admin -----
 
-    @Post()
-    @HttpCode(HttpStatus.CREATED) //asegura que la respuesta tenga el codigo 201 en lugar de 200
-    async create(@Body() createUserDto: CreateUserDto) {
-        return this.usersService.create(createUserDto);
-    }
+  @Get()
+  @Roles(Role.Admin)
+  @ApiOperation({ summary: 'Listar todos los usuarios (Admin)' })
+  @ApiResponse({ status: 200, description: 'Lista de usuarios' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  async findAll() {
+    return this.usersService.findAll();
+  }
 
-    @Get(':id')
-    async findById(@Param('id') id: number) {
-        return this.usersService.findById(+id); //+id convierte el string a número
-    }
+  @Post()
+  @Roles(Role.Admin)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Crear usuario directamente (Admin)' })
+  @ApiResponse({ status: 201, description: 'Usuario creado' })
+  @ApiResponse({ status: 409, description: 'Email ya registrado' })
+  async create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
+  }
 
-    @Patch(':id')
-    async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-        return this.usersService.update(+id, updateUserDto);
-    }
+  @Delete(':id')
+  @Roles(Role.Admin)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Eliminar usuario (Admin)' })
+  @ApiResponse({ status: 204, description: 'Usuario eliminado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.usersService.remove(id);
+  }
 
-    @Delete(':id')
-    @HttpCode(HttpStatus.NO_CONTENT) // 204 No Content para indicar eliminación exitosa sin contenido
-    async remove(@Param('id') id: number) {
-        await this.usersService.remove(+id);
-    }
+  // ----- Usuarios autenticados -----
 
-    // @Put(':id/profile')
-    // async updateProfile(@Param('id') id: number, @Body() profileData: any) {}
+  @Get('me')
+  @ApiOperation({ summary: 'Ver perfil del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Datos del usuario actual' })
+  async getMe(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.findById(user.id);
+  }
+
+  @Get(':id')
+  @Roles(Role.Admin)
+  @ApiOperation({ summary: 'Buscar usuario por ID (Admin)' })
+  @ApiResponse({ status: 200, description: 'Usuario encontrado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  async findById(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findById(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar usuario' })
+  @ApiResponse({ status: 200, description: 'Usuario actualizado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(id, updateUserDto);
+  }
 }
