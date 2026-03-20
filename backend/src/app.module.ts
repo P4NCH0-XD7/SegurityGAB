@@ -17,6 +17,7 @@ import { ProductsModule } from './modules/products/products.module';
 
 // Database
 import { DatabaseModule } from './database/database.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { DatabaseModule } from './database/database.module';
     UsersModule,
     CartModule,
     ProductsModule,
+    RolesModule,
     // CategoriesModule,
     // InventoryModule,
     // CustomersModule,
