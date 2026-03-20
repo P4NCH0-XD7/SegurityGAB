@@ -9,7 +9,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { Category } from '../../categories/entities/category.entity';
+import { Category } from './category.entity';
 import { CartItem } from '../../cart/entities/cart-item.entity';
 import { SaleDetail } from '../../sales/entities/sale-detail.entity';
 import { Inventory } from '../../inventory/entities/inventory.entity';
@@ -24,7 +24,7 @@ export class Product {
     @Column({ type: 'varchar', length: 150 })
     name: string;
 
-    @Column({ type: 'varchar', length: 150, unique: true })
+    @Column({ type: 'varchar', length: 150, unique: true, nullable: true })
     slug: string;
 
     @Column({ type: 'text', nullable: true })
@@ -33,19 +33,19 @@ export class Product {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     price: number;
 
-    @Column({ type: 'varchar', length: 50, unique: true })
+    @Column({ type: 'varchar', length: 50, unique: true, nullable: true })
     sku: string;
 
     @Column({ name: 'image_url', type: 'varchar', length: 500, nullable: true })
     imageUrl: string;
 
-    @Column({ name: 'is_active', type: 'boolean', default: true })
-    isActive: boolean;
+    @Column({ type: 'enum', enum: ['visible', 'hidden'], default: 'visible' })
+    status: string;
 
-    @Column({ name: 'stock_level', type: 'int', default: 0 })
-    stockLevel: number; // Stock actual cacheado para lectura rápida
+    @Column({ name: 'stock', type: 'int', default: 0 })
+    stock: number; 
 
-    @Column({ name: 'category_id', type: 'int' })
+    @Column({ name: 'category_id', type: 'int', nullable: true })
     categoryId: number;
 
     @CreateDateColumn({ name: 'created_at' })
@@ -55,7 +55,7 @@ export class Product {
     updatedAt: Date;
 
     // Relaciones
-    @ManyToOne(() => Category, (category) => category.products)
+    @ManyToOne(() => Category, (category) => category.products, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'category_id' })
     category: Category;
 
