@@ -1,22 +1,38 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+'use client';
+
+import { Inter, Manrope } from "next/font/google";
 import "../styles/globals.css";
+import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
+import { useAuthStore } from '@/store/useAuthStore';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: '--font-inter',
+});
 
-export const metadata: Metadata = {
-  title: "SegurityGAB - Tu lugar seguro",
-  description: "Protección avanzada para lo que más quieres. Cámaras, alarmas y más.",
-};
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: '--font-manrope',
+});
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const checkAuth = useAuthStore(state => state.checkAuth);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   return (
     <html lang="es">
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.variable} ${manrope.variable} ${inter.className}`}>
+        <Toaster position="bottom-right" />
+        {children}
+      </body>
     </html>
   );
 }
