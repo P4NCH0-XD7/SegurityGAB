@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { FaUserPlus, FaUserEdit, FaUserShield, FaSearch, FaUser, FaTrash } from "react-icons/fa";
 import { toast } from "react-hot-toast";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface User {
     id: number;
@@ -26,6 +27,7 @@ export default function UsersManagementPage() {
         isActive: true
     });
 
+    const { token } = useAuthStore();
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
     useEffect(() => {
@@ -54,9 +56,6 @@ export default function UsersManagementPage() {
 
     const fetchUsers = async () => {
         try {
-            const authStorage = localStorage.getItem('auth-storage');
-            const token = authStorage ? JSON.parse(authStorage).state.token : null;
-
             const res = await fetch(`${API_URL}/users`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -67,7 +66,8 @@ export default function UsersManagementPage() {
                 const data = await res.json();
                 setUsers(data);
             } else {
-                toast.error("Error de permisos al cargar usuarios");
+                const err = await res.json().catch(() => ({}));
+                toast.error(err.message || "Error de permisos al cargar usuarios");
             }
         } catch (error) {
             console.error("Error fetching users:", error);
@@ -80,9 +80,6 @@ export default function UsersManagementPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const authStorage = localStorage.getItem('auth-storage');
-            const token = authStorage ? JSON.parse(authStorage).state.token : null;
-
             const url = currentUser?.id 
                 ? `${API_URL}/users/${currentUser.id}` 
                 : `${API_URL}/users`;
@@ -121,9 +118,6 @@ export default function UsersManagementPage() {
         if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
 
         try {
-            const authStorage = localStorage.getItem('auth-storage');
-            const token = authStorage ? JSON.parse(authStorage).state.token : null;
-
             const res = await fetch(`${API_URL}/users/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -131,7 +125,7 @@ export default function UsersManagementPage() {
                 }
             });
 
-            if (res.ok) {
+            if (res.status === 204 || res.ok) {
                 toast.success("Usuario eliminado");
                 fetchUsers();
             } else {
