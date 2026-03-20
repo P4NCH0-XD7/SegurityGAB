@@ -4,11 +4,18 @@ import Link from "next/link";
 import { FaShoppingCart, FaSearch, FaUser } from "react-icons/fa";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useEffect } from "react";
 
 export default function Navbar() {
   const items = useCartStore(state => state.items);
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isInitialized, checkAuth } = useAuthStore();
   const itemCount = items.reduce((acc, item) => acc + (item.quantity || 0), 0);
+
+  useEffect(() => {
+    if (!isInitialized) {
+      checkAuth();
+    }
+  }, [isInitialized, checkAuth]);
 
   return (
     <nav style={{
@@ -79,7 +86,7 @@ export default function Navbar() {
         </Link>
         <Link href={isAuthenticated ? "/profile" : "/login"} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
           <FaUser size={20} color="var(--on-surface-variant)" style={{ cursor: 'pointer' }} />
-          {isAuthenticated && user && (
+          {isInitialized && isAuthenticated && user && (
             <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--on-surface)' }}>{user.name || 'Mi Perfil'}</span>
           )}
         </Link>

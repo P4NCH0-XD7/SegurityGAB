@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { FaUser, FaEnvelope, FaMapMarkerAlt, FaShieldAlt, FaHistory, FaEdit, FaCheck, FaTimes } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaMapMarkerAlt, FaShieldAlt, FaHistory, FaEdit, FaCheck, FaTimes, FaSignOutAlt } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -9,7 +9,7 @@ import Footer from "@/components/shop/Footer";
 import toast from "react-hot-toast";
 
 export default function ProfilePage() {
-    const { user, isAuthenticated, token } = useAuthStore();
+    const { user, isAuthenticated, token, logout } = useAuthStore();
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
@@ -136,6 +136,27 @@ export default function ProfilePage() {
 
                                 <button onClick={() => setIsEditing(true)} className="btn btn-primary" style={{ width: '100%', marginTop: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                                     <FaEdit /> Editar Perfil
+                                </button>
+
+                                <button 
+                                    onClick={() => {
+                                        logout();
+                                        router.replace('/login');
+                                    }} 
+                                    className="btn" 
+                                    style={{ 
+                                        width: '100%', 
+                                        marginTop: '1rem', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center', 
+                                        gap: '0.5rem',
+                                        background: 'rgba(255, 68, 68, 0.1)',
+                                        color: '#ff4444',
+                                        border: '1px solid #ff4444'
+                                    }}
+                                >
+                                    <FaSignOutAlt /> Cerrar Sesión
                                 </button>
                             </>
                         )}

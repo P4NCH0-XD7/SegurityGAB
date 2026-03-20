@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { FaThLarge, FaShoppingCart, FaBoxes, FaUsers, FaChartBar, FaCog, FaBell, FaUserCircle } from "react-icons/fa";
+import { FaThLarge, FaShoppingCart, FaBoxes, FaUsers, FaChartBar, FaCog, FaBell, FaUserCircle, FaSignOutAlt, FaStore } from "react-icons/fa";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -11,18 +11,34 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { user, isAuthenticated } = useAuthStore();
+    const { user, isAuthenticated, logout, checkAuth, isInitialized } = useAuthStore();
     const router = useRouter();
 
     useEffect(() => {
-        // Redirigir si no está autenticado o si no es admin (roleId !== 1)
-        if (!isAuthenticated || user?.roleId !== 1) {
-            router.replace("/");
+        if (!isInitialized) {
+            checkAuth();
         }
-    }, [isAuthenticated, user, router]);
+    }, [isInitialized, checkAuth]);
 
-    if (!isAuthenticated || user?.roleId !== 1) {
-        return null; // Evitar parpadeo de contenido mientras redirige
+    useEffect(() => {
+        if (isInitialized) {
+            if (!isAuthenticated || user?.roleId !== 1) {
+                router.replace("/");
+            }
+        }
+    }, [isInitialized, isAuthenticated, user, router]);
+
+    const handleLogout = () => {
+        logout();
+        router.push("/login");
+    };
+
+    if (!isInitialized || !isAuthenticated || user?.roleId !== 1) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--surface)' }}>
+                <div>Cargando dashboard...</div>
+            </div>
+        );
     }
 
     const navItems = [
@@ -38,9 +54,9 @@ export default function DashboardLayout({
         <div className="dashboard-container">
             {/* Sidebar */}
             <aside className="sidebar">
-                <div className="sidebar-title">
+                <Link href="/dashboard" className="sidebar-title" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                     SegurityGAB
-                </div>
+                </Link>
                 <nav style={{ flex: 1 }}>
                     <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {navItems.map((item) => (
@@ -53,6 +69,12 @@ export default function DashboardLayout({
                         ))}
                     </ul>
                 </nav>
+
+                <div style={{ padding: '1rem', borderTop: '1px solid var(--surface-high)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <Link href="/" className="nav-link" style={{ color: 'var(--secondary)' }}>
+                        <FaStore /> Volver a la Tienda
+                    </Link>
+                </div>
             </aside>
 
             {/* Main Content */}
@@ -67,12 +89,44 @@ export default function DashboardLayout({
                             <FaBell style={{ color: 'var(--on-surface-variant)' }} size={20} />
                             <span style={{ position: 'absolute', top: '-2px', right: '-2px', width: '8px', height: '8px', background: 'var(--error)', borderRadius: '50%' }}></span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', padding: '0.5rem 1rem', background: 'var(--surface-low)', borderRadius: '2rem' }}>
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '1rem', 
+                            padding: '0.5rem 1rem', 
+                            background: 'var(--surface-low)', 
+                            borderRadius: '2rem',
+                            border: '1px solid var(--surface-high)'
+                        }}>
                             <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--on-surface)' }}>{user?.name}</div>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Panel de Gestión</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin</div>
                             </div>
-                            <FaUserCircle size={32} color="var(--primary)" />
+                            <Link href="/profile" style={{ color: 'var(--primary)', display: 'flex' }}>
+                                <FaUserCircle size={32} />
+                            </Link>
+                            <button 
+                                onClick={handleLogout}
+                                title="Cerrar Sesión"
+                                style={{ 
+                                    background: 'var(--surface-high)', 
+                                    border: 'none', 
+                                    color: 'var(--error)', 
+                                    cursor: 'pointer',
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s ease',
+                                    marginLeft: '0.5rem'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 68, 68, 0.1)'}
+                                onMouseOut={(e) => e.currentTarget.style.background = 'var(--surface-high)'}
+                            >
+                                <FaSignOutAlt size={16} />
+                            </button>
                         </div>
                     </div>
                 </header>
