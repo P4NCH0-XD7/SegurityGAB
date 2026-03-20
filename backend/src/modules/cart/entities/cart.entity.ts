@@ -1,22 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    UpdateDateColumn,
+    ManyToOne,
+    OneToMany,
+    JoinColumn,
+} from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 import { CartItem } from './cart-item.entity';
 
-@Entity('carts')
+@Entity({ name: 'carts' })
 export class Cart {
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @PrimaryGeneratedColumn()
-  id!: number;
+    @Column({ name: 'user_id', type: 'int', nullable: true })
+    userId: number; // Nullable para permitir carritos de invitados si fuera necesario
 
-  @Column()
-  user_id!: number;
+    @Column({ name: 'is_active', type: 'boolean', default: true })
+    isActive: boolean; // false cuando se convierte en venta
 
-  @Column({ type: 'timestamp' })
-  created_at!: Date;
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt: Date;
 
-  @Column({ type: 'timestamp' })
-  updated_at!: Date;
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt: Date;
 
-  @OneToMany(() => CartItem, item => item.cart)
-  items: CartItem[];
+    // Relaciones
+    @ManyToOne(() => User, (user) => user.carts)
+    @JoinColumn({ name: 'user_id' })
+    user: User;
 
+    @OneToMany(() => CartItem, (item) => item.cart, { cascade: true })
+    items: CartItem[];
 }
