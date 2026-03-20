@@ -20,19 +20,19 @@ export class CartService {
   async addToCart(data: AddToCartDto) {
 
     let cart = await this.cartRepository.findOne({
-      where: { user_id: data.user_id }
+      where: { userId: data.user_id }
     });
 
     if (!cart) {
       cart = await this.cartRepository.save({
-        user_id: data.user_id
+        userId: data.user_id
       });
     }
 
     const item = await this.cartItemRepository.findOne({
       where: {
-        cart_id: cart.id,
-        product_id: data.product_id
+        cartId: cart.id,
+        productId: data.product_id
       }
     });
 
@@ -42,15 +42,15 @@ export class CartService {
     }
 
     return this.cartItemRepository.save({
-      cart_id: cart.id,
-      product_id: data.product_id,
+      cartId: cart.id,
+      productId: data.product_id,
       quantity: data.quantity
     });
   }
 
   async getCart(userId: number) {
     return this.cartRepository.findOne({
-      where: { user_id: userId },
+      where: { userId: userId },
       relations: ['items']
     });
   }
@@ -62,13 +62,13 @@ export class CartService {
   async clearCart(userId: number) {
 
     const cart = await this.cartRepository.findOne({
-      where: { user_id: userId }
+      where: { userId: userId }
     });
 
     if (!cart) return;
 
     return this.cartItemRepository.delete({
-      cart_id: cart.id
+      cartId: cart.id
     });
   }
 

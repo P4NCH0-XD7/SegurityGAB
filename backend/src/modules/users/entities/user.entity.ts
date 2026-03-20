@@ -5,7 +5,11 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     Index,
+    OneToMany,
 } from 'typeorm';
+import { Cart } from '../../cart/entities/cart.entity';
+import { Sale } from '../../sales/entities/sale.entity';
+import { Wishlist } from '../../wishlist/entities/wishlist.entity';
 
 @Entity({ name: 'users' })
 export class User {
@@ -53,4 +57,14 @@ export class User {
 
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
+
+    // Relaciones
+    @OneToMany(() => Cart, (cart) => cart.user)
+    carts: Cart[];
+
+    @OneToMany(() => Sale, (sale) => sale.user)
+    sales: Sale[];
+
+    @OneToMany(() => Wishlist, (wishlist) => wishlist.user)
+    wishlistItems: Wishlist[];
 }
