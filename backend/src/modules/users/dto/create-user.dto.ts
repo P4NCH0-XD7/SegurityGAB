@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
     @IsString({ message: 'El nombre debe ser un texto.' })
@@ -15,7 +15,11 @@ export class CreateUserDto {
     @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres.' })
     password: string;
 
-    @IsOptional() // Hacemos que el campo 'phone' sea opcional
+    @IsOptional()
     @IsString({ message: 'El número de teléfono debe ser un texto.' })
-    phone?: string; // ? indica que el campo es opcional
+    phone?: string;
+
+    @IsOptional()
+    @IsInt({ message: 'El rol debe ser un número entero.' })
+    roleId?: number;
 }

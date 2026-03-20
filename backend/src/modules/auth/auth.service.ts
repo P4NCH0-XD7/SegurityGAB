@@ -51,6 +51,7 @@ export class AuthService {
       name: registerDto.nombre_completo,
       email: registerDto.correo_electronico,
       password: registerDto.password,
+      roleId: registerDto.roleId,
     });
 
     return newUser;

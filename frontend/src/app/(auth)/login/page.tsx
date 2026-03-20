@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,12 +41,14 @@ export default function LoginPage() {
         throw new Error(data.message || 'Credenciales incorrectas');
       }
 
-      // Guardar token y datos del usuario en localStorage
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Guardar token y datos del usuario en localStorage y store
+      const { login } = useAuthStore.getState();
+      login(data.user, data.access_token);
 
-      // Redirigir al home o dashboard
-      router.push('/');
+      // Redirigir la ruta previa o al home
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect') || '/';
+      router.push(redirect);
       router.refresh();
       
     } catch (err: any) {
