@@ -22,4 +22,7 @@ export class CreateUserDto {
     @IsOptional()
     @IsInt({ message: 'El rol debe ser un número entero.' })
     roleId?: number;
+
+    @IsOptional()
+    isActive?: boolean;
 }

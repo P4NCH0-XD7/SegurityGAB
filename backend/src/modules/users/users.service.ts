@@ -19,7 +19,7 @@ export class UsersService {
     }
 
     async create(createUserDto: CreateUserDto): Promise<Omit<User, 'passwordHash'>> {
-        const { name, email, password, phone, roleId } = createUserDto;
+        const { name, email, password, phone, roleId, isActive } = createUserDto;
 
         //Verificar si el email ya existe
         const existingUser = await this.userRepository.findOne({ where: { email } });
@@ -38,6 +38,7 @@ export class UsersService {
             passwordHash: hashedPassword,
             phone,
             roleId: roleId || 2, //Asignamos un rol por defecto si no se proporciona. Ej: 1=admin, 2=cliente
+            isActive: isActive !== undefined ? isActive : true,
         });
 
         await this.userRepository.save(newUser);
