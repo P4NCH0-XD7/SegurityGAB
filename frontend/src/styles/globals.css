@@ -1,14 +1,28 @@
 :root {
-  --primary: #135bec;
-  --primary-dark: #0f49c0;
-  --secondary: #64748b;
-  --accent: #f59e0b;
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --border: #e2e8f0;
-  --radius: 0.5rem;
+  /* Precision Sanctuary - Guardian's Architectural Ethos */
+  --primary: #115cb9;
+  --primary-dim: #0050a7;
+  --secondary: #006f25;
+  --secondary-container: #83fc8e;
+  
+  --surface: #f8f9fa;
+  --surface-bright: #f8f9fa;
+  --surface-low: #f1f4f6;
+  --surface-high: #e3e9ec;
+  --surface-highest: #dbe4e7;
+  --surface-lowest: #ffffff;
+  
+  --on-surface: #2b3437;
+  --on-surface-variant: #586064;
+  --outline: #737c7f;
+  --outline-variant: #abb3b7;
+
+  --background: var(--surface);
+  --foreground: var(--on-surface);
+  --card: var(--surface-lowest);
+  --border: var(--outline-variant);
+  --radius: 0.75rem; /* rounded-md from design system */
+  --radius-lg: 1rem;  /* rounded-lg for cards */
 }
 
 * {
@@ -23,6 +37,7 @@ body {
   overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-inter), sans-serif;
 }
 
 a {
@@ -32,6 +47,7 @@ a {
 
 h1, h2, h3, h4, h5, h6 {
   color: var(--foreground);
+  font-family: var(--font-manrope), sans-serif;
   font-weight: 700;
   line-height: 1.2;
 }
