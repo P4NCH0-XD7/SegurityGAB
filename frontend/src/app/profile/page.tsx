@@ -9,13 +9,12 @@ import Footer from "@/components/shop/Footer";
 import toast from "react-hot-toast";
 
 export default function ProfilePage() {
-    const { user, isAuthenticated, token, logout } = useAuthStore();
+    const { user, isAuthenticated, token, logout, updateUser } = useAuthStore();
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
-        phone: '' // Podríamos traerlo de un fetch más profundo
     });
 
     useEffect(() => {
@@ -30,7 +29,7 @@ export default function ProfilePage() {
 
     const handleSave = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -40,11 +39,13 @@ export default function ProfilePage() {
             });
 
             if (response.ok) {
+                const updatedUser = await response.json();
+                updateUser(updatedUser); // Actualiza el store global
                 toast.success("Perfil actualizado correctamente");
                 setIsEditing(false);
-                // Aquí se podría actualizar el store si el backend devuelve el usuario
             } else {
-                toast.error("Error al actualizar el perfil");
+                const error = await response.json();
+                toast.error(error.message || "Error al actualizar el perfil");
             }
         } catch (error) {
             toast.error("Error de conexión");
@@ -202,36 +203,6 @@ export default function ProfilePage() {
                         ) : (
                             /* Client Specific Sections */
                             <>
-                                <div style={{ 
-                                    background: 'var(--surface-lowest)', 
-                                    padding: '2.5rem', 
-                                    borderRadius: 'var(--radius-lg)'
-                                }}>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <FaShieldAlt color="var(--primary)" /> Mis Dispositivos Seguros
-                                    </h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                        <div style={{ background: 'var(--surface-low)', padding: '1.5rem', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                            <div style={{ background: 'var(--surface-lowest)', width: '40px', height: '40px', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--secondary)' }}>
-                                                <FaShieldAlt />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Cámara Sala Principal</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--secondary)' }}>Activa y Protegiendo</div>
-                                            </div>
-                                        </div>
-                                        <div style={{ background: 'var(--surface-low)', padding: '1.5rem', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                            <div style={{ background: 'var(--surface-lowest)', width: '40px', height: '40px', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--secondary)' }}>
-                                                <FaShieldAlt />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Sensor Movimiento Garaje</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--secondary)' }}>Activa y Protegiendo</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div style={{ 
                                     background: 'var(--surface-lowest)', 
                                     padding: '2.5rem', 

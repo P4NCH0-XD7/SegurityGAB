@@ -14,10 +14,11 @@ interface AuthState {
   isInitialized: boolean;
   login: (user: User, token: string) => void;
   logout: () => void;
+  updateUser: (userData: Partial<User>) => void;
   checkAuth: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   isAuthenticated: false,
@@ -31,6 +32,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     set({ user: null, token: null, isAuthenticated: false });
+  },
+  updateUser: (userData) => {
+    const currentUser = get().user;
+    if (currentUser) {
+      const updatedUser = { ...currentUser, ...userData };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      set({ user: updatedUser });
+    }
   },
   checkAuth: () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;

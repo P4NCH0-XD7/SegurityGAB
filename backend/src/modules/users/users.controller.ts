@@ -76,6 +76,16 @@ export class UsersController {
     return this.usersService.findById(user.id);
   }
 
+  @Patch('me')
+  @ApiOperation({ summary: 'Actualizar perfil del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Perfil actualizado' })
+  async updateMe(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(user.id, updateUserDto);
+  }
+
   @Get(':id')
   @Roles(Role.Admin)
   @ApiOperation({ summary: 'Buscar usuario por ID (Admin)' })
