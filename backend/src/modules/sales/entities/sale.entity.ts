@@ -23,32 +23,32 @@ export enum SaleStatus {
 @Entity({ name: 'sales' })
 export class Sale {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Index()
     @Column({ name: 'user_id', type: 'int' })
-    userId: number;
+    userId!: number;
 
     @Column({ name: 'total_amount', type: 'decimal', precision: 12, scale: 2 })
-    totalAmount: number;
+    totalAmount!: number;
 
     @Column({ type: 'enum', enum: SaleStatus, default: SaleStatus.PENDING })
-    status: SaleStatus;
+    status!: SaleStatus;
 
     @Column({ name: 'shipping_address', type: 'text' })
-    shippingAddress: string;
+    shippingAddress!: string;
 
     @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
+    createdAt!: Date;
 
     @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt: Date;
+    updatedAt!: Date;
 
     // Relaciones
     @ManyToOne(() => User, (user) => user.sales)
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user!: User;
 
     @OneToMany(() => SaleDetail, (detail) => detail.sale, { cascade: true })
-    details: SaleDetail[];
+    details!: SaleDetail[];
 }
