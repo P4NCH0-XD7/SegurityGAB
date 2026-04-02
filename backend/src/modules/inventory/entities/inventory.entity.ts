@@ -17,28 +17,28 @@ export enum InventoryType {
 @Entity({ name: 'inventory_movements' })
 export class Inventory {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: number | undefined;
 
     @Column({ name: 'product_id', type: 'int' })
-    productId: number;
+    productId: number | undefined;
 
     @Column({ type: 'enum', enum: InventoryType })
-    type: InventoryType;
+    type: InventoryType | undefined;
 
     @Column({ type: 'int' })
-    quantity: number; // Siempre positivo, el tipo define si suma o resta
+    quantity: number | undefined; // Siempre positivo, el tipo define si suma o resta
 
     @Column({ type: 'varchar', length: 255, nullable: true })
-    reason: string; // Ej: "Venta #123", "Reabastecimiento", "Merma"
+    reason: string | undefined; // Ej: "Venta #123", "Reabastecimiento", "Merma"
 
     @Column({ name: 'reference_id', type: 'int', nullable: true })
-    referenceId: number; // ID de la Venta o Compra asociada
+    referenceId: number | undefined; // ID de la Venta o Compra asociada
 
     @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
+    createdAt: Date | undefined;
 
     // Relaciones
     @ManyToOne(() => Product, (product) => product.inventoryMovements)
     @JoinColumn({ name: 'product_id' })
-    product: Product;
+    product: Product | undefined;
 }
