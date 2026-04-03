@@ -7,8 +7,8 @@ import { UsersModule } from './modules/users/users.module';
 import { CartModule } from './modules/cart/cart.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SalesModule } from './modules/sales/sales.module';
+import { InventorysModule } from './modules/inventory/inventory.module';
 // import { CategoriesModule } from './modules/categories/categories.module';
-// import { InventoryModule } from './modules/inventory/inventory.module';
 // import { CustomersModule } from './modules/customers/customers.module';
 // import { SuppliersModule } from './modules/suppliers/suppliers.module';
 // import { SaleDetailsModule } from './modules/sale-details/sale-details.module';
@@ -37,8 +37,8 @@ import { RolesModule } from './modules/roles/roles.module';
     ProductsModule,
     RolesModule,
     SalesModule,
+    InventorysModule,
     // CategoriesModule,
-    // InventoryModule,
     // CustomersModule,
     // SuppliersModule,
     // SaleDetailsModule,
