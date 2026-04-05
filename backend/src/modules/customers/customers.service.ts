@@ -32,6 +32,20 @@ export class CustomersService {
     return customer;
   }
 
+  // Busca el perfil de cliente por userId (usado en GET /customers/me)
+  async findByUserId(userId: number): Promise<Customer> {
+    const customer = await this.customerRepository.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+    if (!customer) {
+      throw new NotFoundException(
+        `No tienes un perfil de cliente aún. Puedes crearlo con POST /customers.`,
+      );
+    }
+    return customer;
+  }
+
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
     // Verificar si ya existe un cliente para ese usuario
     const existingCustomer = await this.customerRepository.findOne({
