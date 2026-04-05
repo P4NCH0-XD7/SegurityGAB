@@ -8,8 +8,8 @@ import { CartModule } from './modules/cart/cart.module';
 import { ProductsModule } from './modules/products/products.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { InventorysModule } from './modules/inventory/inventory.module';
+import { CustomersModule } from './modules/customers/customers.module';
 // import { CategoriesModule } from './modules/categories/categories.module';
-// import { CustomersModule } from './modules/customers/customers.module';
 // import { SuppliersModule } from './modules/suppliers/suppliers.module';
 // import { SaleDetailsModule } from './modules/sale-details/sale-details.module';
 // import { WishlistModule } from './modules/wishlist/wishlist.module';
@@ -38,8 +38,8 @@ import { RolesModule } from './modules/roles/roles.module';
     RolesModule,
     SalesModule,
     InventorysModule,
+    CustomersModule,
     // CategoriesModule,
-    // CustomersModule,
     // SuppliersModule,
     // SaleDetailsModule,
     // WishlistModule,
