@@ -177,11 +177,11 @@ export default function ProductsManagementPage() {
 
     const getDisplayImageUrl = (url?: string) => {
         if (!url) return "";
-        // Detectar IDs de Google Drive en varios formatos (compartir, enlace directo, etc)
-        const driveMatch = url.match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
-        if (driveMatch && driveMatch[1]) {
-            // Usamos drive.usercontent.google.com que suele ser más directo para incrustar
-            return `https://drive.usercontent.google.com/download?id=${driveMatch[1]}&export=view`;
+        // Detectar IDs de Google Drive o links de GitHub blob: los pasamos por nuestro proxy
+        const isDrive = url.match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
+        const isGithubBlob = url.match(/github\.com\/[^/]+\/[^/]+\/blob\//);
+        if (isDrive || isGithubBlob) {
+            return `${API_URL}/products/image-proxy?url=${encodeURIComponent(url)}`;
         }
         return url;
     };

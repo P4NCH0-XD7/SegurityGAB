@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
 import { AuthGuard } from '@nestjs/passport';
 import { ProductsService } from './products.service';
@@ -14,6 +15,12 @@ export class ProductsController {
   @Get()
   findAll() {
     return this.productsService.findAll();
+  }
+
+  @Public()
+  @Get('image-proxy')
+  async proxyImage(@Query('url') url: string, @Res() res: Response) {
+    return this.productsService.proxyImage(url, res);
   }
 
   @Public()

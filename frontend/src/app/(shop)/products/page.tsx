@@ -18,9 +18,10 @@ export default function ProductsPage() {
 
     const getDisplayImageUrl = (url?: string) => {
         if (!url) return "";
-        const driveMatch = url.match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
-        if (driveMatch && driveMatch[1]) {
-            return `https://drive.usercontent.google.com/download?id=${driveMatch[1]}&export=view`;
+        const isDrive = url.match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
+        const isGithubBlob = url.match(/github\.com\/[^/]+\/[^/]+\/blob\//);
+        if (isDrive || isGithubBlob) {
+            return `${API_URL}/products/image-proxy?url=${encodeURIComponent(url)}`;
         }
         return url;
     };
