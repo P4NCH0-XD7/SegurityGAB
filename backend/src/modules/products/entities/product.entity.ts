@@ -8,12 +8,16 @@ import {
     OneToMany,
     JoinColumn,
     Index,
+    BeforeInsert,
+    BeforeUpdate,
+    DeleteDateColumn,
+    Relation
 } from 'typeorm';
-import { Category } from './category.entity';
-import { CartItem } from '../../cart/entities/cart-item.entity';
-import { SaleDetail } from '../../sales/entities/sale-detail.entity';
-import { Inventory } from '../../inventory/entities/inventory.entity';
-import { Wishlist } from '../../wishlist/entities/wishlist.entity';
+import type { Category } from './category.entity';
+import type { CartItem } from '../../cart/entities/cart-item.entity';
+import type { SaleDetail } from '../../sales/entities/sale-detail.entity';
+import type { Inventory } from '../../inventory/entities/inventory.entity';
+import type { Wishlist } from '../../wishlist/entities/wishlist.entity';
 
 @Entity({ name: 'products' })
 export class Product {
@@ -54,20 +58,36 @@ export class Product {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
+    @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+    deletedAt: Date;
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    generateSlug() {
+        if (this.name) {
+            this.slug = this.name
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '') // remove special characters
+                .replace(/[\s_-]+/g, '-') // replace spaces, underscores, and dashes with a single dash
+                .replace(/^-+|-+$/g, ''); // remove leading or trailing dashes
+        }
+    }
+
     // Relaciones
-    @ManyToOne(() => Category, (category) => category.products, { onDelete: 'SET NULL' })
+    @ManyToOne('Category', (category: Category) => category.products, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'category_id' })
-    category: Category;
+    category!: Relation<Category>;
 
-    @OneToMany(() => CartItem, (cartItem) => cartItem.product)
-    cartItems: CartItem[];
+    @OneToMany('CartItem', (cartItem: CartItem) => cartItem.product)
+    cartItems!: Relation<CartItem[]>;
 
-    @OneToMany(() => SaleDetail, (saleDetail) => saleDetail.product)
-    saleDetails: SaleDetail[];
+    @OneToMany('SaleDetail', (saleDetail: SaleDetail) => saleDetail.product)
+    saleDetails!: Relation<SaleDetail[]>;
 
-    @OneToMany(() => Inventory, (inventory) => inventory.product)
-    inventoryMovements: Inventory[];
+    @OneToMany('Inventory', (inventory: Inventory) => inventory.product)
+    inventoryMovements!: Relation<Inventory[]>;
 
-    @OneToMany(() => Wishlist, (wishlist) => wishlist.product)
-    wishlistInclusions: Wishlist[];
+    @OneToMany('Wishlist', (wishlist: Wishlist) => wishlist.product)
+    wishlistInclusions!: Relation<Wishlist[]>;
 }

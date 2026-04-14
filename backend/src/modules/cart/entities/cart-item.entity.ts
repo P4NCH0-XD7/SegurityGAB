@@ -6,9 +6,10 @@ import {
     UpdateDateColumn,
     ManyToOne,
     JoinColumn,
+    Relation,
 } from 'typeorm';
-import { Cart } from './cart.entity';
-import { Product } from '../../products/entities/product.entity';
+import type { Cart } from './cart.entity';
+import type { Product } from '../../products/entities/product.entity';
 
 @Entity({ name: 'cart_items' })
 export class CartItem {
@@ -31,11 +32,11 @@ export class CartItem {
     updatedAt: Date;
 
     // Relaciones
-    @ManyToOne(() => Cart, (cart) => cart.items, { onDelete: 'CASCADE' })
+    @ManyToOne('Cart', (cart: Cart) => cart.items, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'cart_id' })
-    cart: Cart;
+    cart!: Relation<Cart>;
 
-    @ManyToOne(() => Product, (product) => product.cartItems)
+    @ManyToOne('Product', (product: Product) => product.cartItems)
     @JoinColumn({ name: 'product_id' })
-    product: Product;
+    product!: Relation<Product>;
 }

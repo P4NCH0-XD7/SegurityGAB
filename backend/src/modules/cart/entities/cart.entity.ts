@@ -7,9 +7,10 @@ import {
     ManyToOne,
     OneToMany,
     JoinColumn,
+    Relation,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
-import { CartItem } from './cart-item.entity';
+import type { User } from '../../users/entities/user.entity';
+import type { CartItem } from './cart-item.entity';
 
 @Entity({ name: 'carts' })
 export class Cart {
@@ -29,10 +30,10 @@ export class Cart {
     updatedAt: Date;
 
     // Relaciones
-    @ManyToOne(() => User, (user) => user.carts)
+    @ManyToOne('User', (user: User) => user.carts)
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user!: Relation<User>;
 
-    @OneToMany(() => CartItem, (item) => item.cart, { cascade: true })
-    items: CartItem[];
+    @OneToMany('CartItem', (item: CartItem) => item.cart, { cascade: true })
+    items!: Relation<CartItem[]>;
 }

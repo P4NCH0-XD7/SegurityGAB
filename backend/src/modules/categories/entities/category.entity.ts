@@ -7,8 +7,9 @@ import {
     OneToMany,
     ManyToOne,
     JoinColumn,
+    Relation,
 } from 'typeorm';
-import { Product } from '../../products/entities/product.entity';
+import type { Product } from '../../products/entities/product.entity';
 
 @Entity({ name: 'categories' })
 export class Category {
@@ -31,13 +32,13 @@ export class Category {
     updatedAt: Date;
 
     // Relaciones
-    @ManyToOne(() => Category, (category) => category.children)
+    @ManyToOne('Category', (category: Category) => category.children)
     @JoinColumn({ name: 'parent_id' })
-    parent: Category;
+    parent!: Relation<Category>;
 
-    @OneToMany(() => Category, (category) => category.parent)
-    children: Category[];
+    @OneToMany('Category', (category: Category) => category.parent)
+    children!: Relation<Category[]>;
 
-    @OneToMany(() => Product, (product) => product.category)
-    products: Product[];
+    @OneToMany('Product', (product: Product) => product.category)
+    products!: Relation<Product[]>;
 }

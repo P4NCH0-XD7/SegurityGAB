@@ -4,9 +4,10 @@ import {
     Column,
     ManyToOne,
     JoinColumn,
+    Relation
 } from 'typeorm';
-import { Sale } from './sale.entity';
-import { Product } from '../../products/entities/product.entity';
+import type { Sale } from './sale.entity';
+import type { Product } from '../../products/entities/product.entity';
 
 @Entity({ name: 'sale_details' })
 export class SaleDetail {
@@ -29,11 +30,11 @@ export class SaleDetail {
     subtotal!: number; // quantity * unitPrice
 
     // Relaciones
-    @ManyToOne(() => Sale, (sale) => sale.details, { onDelete: 'CASCADE' })
+    @ManyToOne('Sale', (sale: Sale) => sale.details, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'sale_id' })
-    sale!: Sale;
+    sale!: Relation<Sale>;
 
-    @ManyToOne(() => Product, (product) => product.saleDetails)
+    @ManyToOne('Product', (product: Product) => product.saleDetails)
     @JoinColumn({ name: 'product_id' })
-    product!: Product;
+    product!: Relation<Product>;
 }

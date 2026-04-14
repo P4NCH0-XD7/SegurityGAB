@@ -5,8 +5,9 @@ import {
     CreateDateColumn,
     ManyToOne,
     JoinColumn,
+    Relation,
 } from 'typeorm';
-import { Product } from '../../products/entities/product.entity';
+import type { Product } from '../../products/entities/product.entity';
 
 export enum InventoryType {
     IN = 'IN',
@@ -38,7 +39,7 @@ export class Inventory {
     createdAt: Date | undefined;
 
     // Relaciones
-    @ManyToOne(() => Product, (product) => product.inventoryMovements)
+    @ManyToOne('Product', (product: Product) => product.inventoryMovements)
     @JoinColumn({ name: 'product_id' })
-    product: Product | undefined;
+    product!: Relation<Product>;
 }

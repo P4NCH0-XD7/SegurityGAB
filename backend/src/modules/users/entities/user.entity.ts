@@ -7,10 +7,11 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Relation,
 } from 'typeorm';
-import { Cart } from '../../cart/entities/cart.entity';
-import { Sale } from '../../sales/entities/sale.entity';
-import { Wishlist } from '../../wishlist/entities/wishlist.entity';
+import type { Cart } from '../../cart/entities/cart.entity';
+import type { Sale } from '../../sales/entities/sale.entity';
+import type { Wishlist } from '../../wishlist/entities/wishlist.entity';
 import { Role } from '../../roles/entities/role.entity';
 
 @Entity({ name: 'users' })
@@ -67,12 +68,12 @@ export class User {
   updatedAt: Date;
 
   // Relaciones
-  @OneToMany(() => Cart, (cart) => cart.user)
-  carts: Cart[];
+  @OneToMany('Cart', (cart: Cart) => cart.user)
+  carts: Relation<Cart[]>;
 
-  @OneToMany(() => Sale, (sale) => sale.user)
-  sales: Sale[];
+  @OneToMany('Sale', (sale: Sale) => sale.user)
+  sales: Relation<Sale[]>;
 
-  @OneToMany(() => Wishlist, (wishlist) => wishlist.user)
-  wishlistItems: Wishlist[];
+  @OneToMany('Wishlist', (wishlist: Wishlist) => wishlist.user)
+  wishlistItems: Relation<Wishlist[]>;
 }

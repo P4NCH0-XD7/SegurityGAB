@@ -10,12 +10,12 @@ export class RolesService implements OnApplicationBootstrap {
         private readonly role_repository: Repository<Role>,
     ) {}
 
-    // 🔥 SE EJECUTA AUTOMÁTICAMENTE AL INICIAR EL SISTEMA
+    //  SE EJECUTA AUTOMÁTICAMENTE AL INICIAR EL SISTEMA
     async onApplicationBootstrap() {
         await this.seed_roles();
     }
 
-    // 🌱 FUNCIÓN QUE CREA LOS ROLES SI NO EXISTEN
+    //  FUNCIÓN QUE CREA LOS ROLES SI NO EXISTEN
     async seed_roles() {
         const default_roles = ['ADMIN', 'VENDEDOR', 'CLIENTE'];
 

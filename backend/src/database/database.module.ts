@@ -1,3 +1,10 @@
+// Polyfill for Node 18 — @nestjs/typeorm v11 uses crypto.randomUUID()
+// which is only available globally in Node 20+
+if (!globalThis.crypto) {
+    const nodeCrypto = require('crypto');
+    (globalThis as any).crypto = nodeCrypto.webcrypto;
+}
+
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';

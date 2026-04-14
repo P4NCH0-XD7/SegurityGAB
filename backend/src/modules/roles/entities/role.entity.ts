@@ -5,8 +5,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Relation,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import type { User } from '../../users/entities/user.entity';
 
 @Entity({ name: 'roles' })
 export class Role {
@@ -23,6 +24,6 @@ export class Role {
   updatedAt: Date;
 
   // 🔥 RELACIÓN INVERSA
-  @OneToMany(() => User, (user) => user.role)
-  users: User[];
+  @OneToMany('User', (user: User) => user.role)
+  users!: Relation<User[]>;
 }

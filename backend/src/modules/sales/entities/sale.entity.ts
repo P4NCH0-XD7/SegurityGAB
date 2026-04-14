@@ -8,8 +8,9 @@ import {
     OneToMany,
     JoinColumn,
     Index,
+    Relation,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import type { User } from '../../users/entities/user.entity';
 import { SaleDetail } from './sale-detail.entity';
 
 export enum SaleStatus {
@@ -45,9 +46,9 @@ export class Sale {
     updatedAt!: Date;
 
     // Relaciones
-    @ManyToOne(() => User, (user) => user.sales)
+    @ManyToOne('User', (user: User) => user.sales)
     @JoinColumn({ name: 'user_id' })
-    user!: User;
+    user!: Relation<User>;
 
     @OneToMany(() => SaleDetail, (detail) => detail.sale, { cascade: true })
     details!: SaleDetail[];

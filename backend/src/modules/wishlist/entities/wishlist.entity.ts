@@ -6,9 +6,10 @@ import {
     ManyToOne,
     JoinColumn,
     Unique,
+    Relation,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
-import { Product } from '../../products/entities/product.entity';
+import type { User } from '../../users/entities/user.entity';
+import type { Product } from '../../products/entities/product.entity';
 
 @Entity({ name: 'wishlists' })
 @Unique(['userId', 'productId']) // Evitar duplicados del mismo producto para un usuario
@@ -26,11 +27,11 @@ export class Wishlist {
     addedAt: Date;
 
     // Relaciones
-    @ManyToOne(() => User, (user) => user.wishlistItems, { onDelete: 'CASCADE' })
+    @ManyToOne('User', (user: User) => user.wishlistItems, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
-    user: User;
+    user!: Relation<User>;
 
-    @ManyToOne(() => Product, (product) => product.wishlistInclusions, { onDelete: 'CASCADE' })
+    @ManyToOne('Product', (product: Product) => product.wishlistInclusions, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'product_id' })
-    product: Product;
+    product!: Relation<Product>;
 }

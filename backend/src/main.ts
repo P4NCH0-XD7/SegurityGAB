@@ -4,6 +4,10 @@
 // Configura global pipes, guards, CORS, Swagger
 // y arranca el servidor HTTP.
 
+if (!globalThis.crypto) {
+  globalThis.crypto = require('crypto').webcrypto;
+}
+
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';

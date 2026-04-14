@@ -36,6 +36,6 @@ export class ProductsService {
 
   async remove(id: number): Promise<void> {
     const product = await this.findOne(id);
-    await this.productRepository.remove(product);
+    await this.productRepository.softRemove(product);
   }
 }

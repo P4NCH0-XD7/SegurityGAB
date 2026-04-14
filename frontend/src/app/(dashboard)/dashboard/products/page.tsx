@@ -359,7 +359,7 @@ export default function ProductsManagementPage() {
                                         step="0.01"
                                         required
                                         value={formData.price}
-                                        onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value)})}
+                                        onChange={(e) => setFormData({...formData, price: e.target.value ? parseFloat(e.target.value) : 0})}
                                         style={{ width: '100%', padding: '0.75rem', background: 'var(--surface-low)', border: '1px solid var(--surface-high)', borderRadius: '0.75rem', color: 'var(--on-surface)' }}
                                     />
                                 </div>
@@ -369,7 +369,7 @@ export default function ProductsManagementPage() {
                                         type="number" 
                                         required
                                         value={formData.stock}
-                                        onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value)})}
+                                        onChange={(e) => setFormData({...formData, stock: e.target.value ? parseInt(e.target.value) : 0})}
                                         style={{ width: '100%', padding: '0.75rem', background: 'var(--surface-low)', border: '1px solid var(--surface-high)', borderRadius: '0.75rem', color: 'var(--on-surface)' }}
                                     />
                                 </div>
@@ -379,8 +379,8 @@ export default function ProductsManagementPage() {
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--on-surface-variant)', marginBottom: '0.5rem' }}>Categoría</label>
                                     <select 
-                                        value={formData.categoryId}
-                                        onChange={(e) => setFormData({...formData, categoryId: parseInt(e.target.value)})}
+                                        value={formData.categoryId || ""}
+                                        onChange={(e) => setFormData({...formData, categoryId: e.target.value ? parseInt(e.target.value) : undefined})}
                                         style={{ width: '100%', padding: '0.75rem', background: 'var(--surface-low)', border: '1px solid var(--surface-high)', borderRadius: '0.75rem', color: 'var(--on-surface)' }}
                                     >
                                         <option value="">Seleccionar...</option>

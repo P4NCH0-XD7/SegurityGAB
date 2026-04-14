@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
 import Link from "next/link";
 import { FaCamera, FaBell, FaShieldAlt, FaTools, FaHeadset, FaCogs } from "react-icons/fa";
 import Navbar from "@/components/shop/Navbar";
@@ -18,32 +20,38 @@ export default function LandingPage() {
     { title: "Accesorios", icon: <FaTools size={32} /> },
   ];
 
-  const products = [
-    {
-      id: 1,
-      title: "Cámara IP Domo 4K Vision Nocturna Pro",
-      price: "$129.000",
-      image: "/products/camera_ip_domo_4k.png",
-    },
-    {
-      id: 2,
-      title: "Kit Alarma Inalámbrica Inteligente 8 Zonas",
-      price: "$245.500",
-      image: "/products/kit_alarma_premium.png",
-    },
-    {
-      id: 3,
-      title: "DVR Híbrido 16 Canales Full HD Cloud",
-      price: "$189.000",
-      image: "/products/dvr_recorder_pro.png",
-    },
-    {
-      id: 4,
-      title: "Cámara Exterior Wifi PTZ 360 Auto-tracking",
-      price: "$79.990",
-      image: "/products/camera_ptz_outdoor.png",
-    },
-  ];
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+
+  useEffect(() => {
+    const fetchVisibleProducts = async () => {
+      try {
+        const res = await fetch(`${API_URL}/products`);
+        if (res.ok) {
+          const data = await res.json();
+          // Map DB keys to frontend keys, filter visible, limit to 4
+          const visible = data
+            .filter((p: any) => p.status === 'visible')
+            .slice(0, 4)
+            .map((p: any) => ({
+              id: p.id,
+              title: p.name,
+              // Convert to money string format expected by UI
+              price: `$${Number(p.price).toLocaleString('es-CO')}`,
+              image: p.imageUrl || "/products/placeholder.png", // fallback image
+            }));
+          setProducts(visible);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVisibleProducts();
+  }, [API_URL]);
 
   const handleAddToCart = (product: any) => {
     addItem(product);
@@ -122,32 +130,42 @@ export default function LandingPage() {
             <Link href="/products" style={{ color: 'var(--primary)', fontWeight: '600' }}>Ver todos los productos →</Link>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
-            {products.map(product => (
-              <div key={product.id} className="product-card" style={{ 
-                background: 'var(--surface-lowest)', 
-                borderRadius: 'var(--radius-lg)',
-                overflow: 'hidden',
-                transition: 'all 0.3s ease'
-              }}>
-                <div style={{ height: '300px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-                   {/* Silhouetted image effect */}
-                  <img src={product.image} alt={product.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} />
+          {loading ? (
+             <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '3rem', color: 'var(--on-surface-variant)' }}>
+               Cargando productos destacados...
+             </div>
+          ) : products.length > 0 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
+              {products.map(product => (
+                <div key={product.id} className="product-card" style={{ 
+                  background: 'var(--surface-lowest)', 
+                  borderRadius: 'var(--radius-lg)',
+                  overflow: 'hidden',
+                  transition: 'all 0.3s ease'
+                }}>
+                  <div style={{ height: '300px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                     {/* Silhouetted image effect */}
+                    <img src={product.image} alt={product.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} />
+                  </div>
+                  <div style={{ padding: '2rem' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', fontWeight: '600' }}>{product.title}</h3>
+                    <p style={{ fontWeight: '700', color: 'var(--on-surface)', fontSize: '1.5rem', marginBottom: '1.5rem' }}>{product.price}</p>
+                    <button 
+                      onClick={() => handleAddToCart(product)}
+                      className="btn btn-primary" 
+                      style={{ width: '100%', padding: '1rem', cursor: 'pointer' }}
+                    >
+                      Añadir al Carrito
+                    </button>
+                  </div>
                 </div>
-                <div style={{ padding: '2rem' }}>
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', fontWeight: '600' }}>{product.title}</h3>
-                  <p style={{ fontWeight: '700', color: 'var(--on-surface)', fontSize: '1.5rem', marginBottom: '1.5rem' }}>{product.price}</p>
-                  <button 
-                    onClick={() => handleAddToCart(product)}
-                    className="btn btn-primary" 
-                    style={{ width: '100%', padding: '1rem', cursor: 'pointer' }}
-                  >
-                    Añadir al Carrito
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+             <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '3rem', color: 'var(--on-surface-variant)' }}>
+               No hay productos destacados disponibles en este momento.
+             </div>
+          )}
         </div>
       </section>
 
