@@ -37,6 +37,7 @@ export default function ProductsPage() {
                       .map((p: any) => ({
                           id: p.id,
                           title: p.name,
+                          description: p.description,
                           price: `$${Number(p.price).toLocaleString('es-CO')}`,
                           image: getDisplayImageUrl(p.imageUrl) || "/products/placeholder.png", // fallback image
                       }));
@@ -82,7 +83,23 @@ export default function ProductsPage() {
                                     />
                                 </div>
                                 <div style={{ padding: '2rem' }}>
-                                    <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>{product.title}</h3>
+                                    <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{product.title}</h3>
+                                    <p style={{ 
+                                        fontSize: '0.85rem', 
+                                        color: 'var(--on-surface-variant)', 
+                                        marginBottom: '1rem',
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: '3',
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        wordWrap: 'break-word',
+                                        overflowWrap: 'break-word',
+                                        minHeight: '3.6rem',
+                                        lineHeight: '1.2'
+                                    }}>
+                                        {product.description || "Sin descripción disponible"}
+                                    </p>
                                     <p style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '1.5rem' }}>{product.price}</p>
                                     <button 
                                         onClick={() => handleAddToCart(product)}
