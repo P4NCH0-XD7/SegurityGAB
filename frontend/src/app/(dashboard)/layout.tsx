@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { FaThLarge, FaShoppingCart, FaBoxes, FaUsers, FaChartBar, FaCog, FaBell, FaUserCircle, FaSignOutAlt, FaStore } from "react-icons/fa";
+import { FaThLarge, FaShoppingCart, FaBoxes, FaUsers, FaChartBar, FaCog, FaBell, FaUserCircle, FaSignOutAlt, FaStore, FaClipboardList } from "react-icons/fa";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -45,8 +45,9 @@ export default function DashboardLayout({
         { label: "Resumen", icon: <FaThLarge />, href: "/dashboard" },
         { label: "Pedidos", icon: <FaShoppingCart />, href: "/dashboard/sales" },
         { label: "Productos", icon: <FaBoxes />, href: "/dashboard/products" },
-        { label: "Usuarios", icon: <FaUsers />, href: "/dashboard/users" },
+        { label: "Inventario", icon: <FaClipboardList />, href: "/dashboard/inventory" },
         { label: "Categorías", icon: <FaCog />, href: "/dashboard/categories" },
+        { label: "Usuarios", icon: <FaUsers />, href: "/dashboard/users" },
         { label: "Reportes", icon: <FaChartBar />, href: "/dashboard/reports" },
     ];
 

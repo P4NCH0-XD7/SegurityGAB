@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaFilter, FaBoxOpen } from "react-icons/fa";
 import { toast } from "react-hot-toast";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface Product {
     id: number;
@@ -38,6 +39,7 @@ export default function ProductsManagementPage() {
         imageUrl: ""
     });
 
+    const { token } = useAuthStore();
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
     useEffect(() => {
@@ -91,15 +93,31 @@ export default function ProductsManagementPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const authStorage = localStorage.getItem('auth-storage');
-            const token = authStorage ? JSON.parse(authStorage).state.token : null;
+        
+        if (!token) {
+            toast.error("Sesión no válida. Por favor, reintroduce tus credenciales.");
+            return;
+        }
 
+        try {
             const url = currentProduct?.id 
                 ? `${API_URL}/products/${currentProduct.id}` 
                 : `${API_URL}/products`;
             
             const method = currentProduct?.id ? 'PATCH' : 'POST';
+
+            // Preparar dataToSend excluyendo campos extra que envía el backend
+            // para que no fallen al pasar por la validación del DTO (forbidNonWhitelisted).
+            const { id, createdAt, updatedAt, deletedAt, slug, category, ...dataToSend }: any = formData;
+            
+            // Aseguramos que los tipos numéricos sean correctos
+            dataToSend.price = Number(dataToSend.price);
+            dataToSend.stock = Number(dataToSend.stock);
+            
+            // Manejo estricto de categoryId: si es 0 o indefinido lo removemos o enviamos null
+            if (!dataToSend.categoryId || dataToSend.categoryId === 0) {
+                delete dataToSend.categoryId;
+            }
 
             const res = await fetch(url, {
                 method,
@@ -107,29 +125,32 @@ export default function ProductsManagementPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(dataToSend)
             });
 
             if (res.ok) {
-                toast.success(currentProduct?.id ? "Producto actualizado" : "Producto creado");
+                toast.success(currentProduct?.id ? "Producto actualizado correctamente" : "Producto creado exitosamente");
                 setIsModalOpen(false);
                 fetchProducts();
             } else {
-                const err = await res.json();
-                toast.error(err.message || "Error al guardar");
+                const err = await res.json().catch(() => ({ message: "Ocurrió un error inesperado" }));
+                toast.error(err.message || "Error al procesar la solicitud");
             }
         } catch (error) {
-            toast.error("Error de conexión");
+            console.error("Submit error:", error);
+            toast.error("Error de conexión con el servidor");
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("¿Estás seguro de eliminar este producto?")) return;
+        if (!confirm("¿Estás seguro de que deseas eliminar este producto permanentemente?")) return;
+        
+        if (!token) {
+            toast.error("Error de autenticación");
+            return;
+        }
 
         try {
-            const authStorage = localStorage.getItem('auth-storage');
-            const token = authStorage ? JSON.parse(authStorage).state.token : null;
-
             const res = await fetch(`${API_URL}/products/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -138,10 +159,11 @@ export default function ProductsManagementPage() {
             });
 
             if (res.ok) {
-                toast.success("Producto eliminado");
+                toast.success("Producto eliminado (Soft-delete aplicado)");
                 fetchProducts();
             } else {
-                toast.error("Error al eliminar");
+                const err = await res.json().catch(() => ({}));
+                toast.error(err.message || "No se pudo eliminar el producto");
             }
         } catch (error) {
             toast.error("Error de conexión");
@@ -152,6 +174,17 @@ export default function ProductsManagementPage() {
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const getDisplayImageUrl = (url?: string) => {
+        if (!url) return "";
+        // Detectar IDs de Google Drive en varios formatos (compartir, enlace directo, etc)
+        const driveMatch = url.match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
+        if (driveMatch && driveMatch[1]) {
+            // Usamos drive.usercontent.google.com que suele ser más directo para incrustar
+            return `https://drive.usercontent.google.com/download?id=${driveMatch[1]}&export=view`;
+        }
+        return url;
+    };
 
     return (
         <div className="dashboard-content">
@@ -235,8 +268,21 @@ export default function ProductsManagementPage() {
                             <tr key={product.id} style={{ borderBottom: '1px solid var(--surface-high)', transition: 'background 0.2s ease' }}>
                                 <td style={{ padding: '1.25rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div style={{ width: '48px', height: '48px', background: 'var(--surface-high)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            {product.imageUrl ? <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '0.75rem' }} /> : <FaBoxOpen color="var(--on-surface-variant)" />}
+                                        <div style={{ width: '48px', height: '48px', background: 'var(--surface-high)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                            {product.imageUrl ? (
+                                                <img 
+                                                    src={getDisplayImageUrl(product.imageUrl)} 
+                                                    alt={product.name} 
+                                                    referrerPolicy="no-referrer"
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement;
+                                                        target.src = "https://placehold.co/100x100?text=Error";
+                                                    }}
+                                                />
+                                            ) : (
+                                                <FaBoxOpen color="var(--on-surface-variant)" />
+                                            )}
                                         </div>
                                         <div>
                                             <div style={{ fontWeight: '700', color: 'var(--on-surface)' }}>{product.name}</div>
@@ -399,6 +445,36 @@ export default function ProductsManagementPage() {
                                         <option value="visible">Visible</option>
                                         <option value="hidden">Oculto</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--on-surface-variant)', marginBottom: '0.5rem' }}>Vista Previa</label>
+                                <div style={{ 
+                                    width: '100%', 
+                                    height: '150px', 
+                                    background: 'var(--surface-low)', 
+                                    borderRadius: '0.75rem', 
+                                    border: '1px dashed var(--surface-high)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    overflow: 'hidden'
+                                }}>
+                                    {formData.imageUrl ? (
+                                        <img 
+                                            src={getDisplayImageUrl(formData.imageUrl)} 
+                                            alt="Preview" 
+                                            referrerPolicy="no-referrer"
+                                            style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} 
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.src = "https://placehold.co/300x150?text=Error+de+Carga";
+                                            }}
+                                        />
+                                    ) : (
+                                        <span style={{ color: 'var(--on-surface-variant)', fontSize: '0.8rem' }}>Sin imagen</span>
+                                    )}
                                 </div>
                             </div>
 

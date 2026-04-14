@@ -16,6 +16,15 @@ export default function ProductsPage() {
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
+    const getDisplayImageUrl = (url?: string) => {
+        if (!url) return "";
+        const driveMatch = url.match(/(?:\/file\/d\/|id=)([a-zA-Z0-9_-]+)/);
+        if (driveMatch && driveMatch[1]) {
+            return `https://drive.usercontent.google.com/download?id=${driveMatch[1]}&export=view`;
+        }
+        return url;
+    };
+
     useEffect(() => {
         const fetchAllVisibleProducts = async () => {
             try {
@@ -28,7 +37,7 @@ export default function ProductsPage() {
                           id: p.id,
                           title: p.name,
                           price: `$${Number(p.price).toLocaleString('es-CO')}`,
-                          image: p.imageUrl || "/products/placeholder.png", // fallback image
+                          image: getDisplayImageUrl(p.imageUrl) || "/products/placeholder.png", // fallback image
                       }));
                     setProducts(visible);
                 }
@@ -59,8 +68,17 @@ export default function ProductsPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
                         {products.map(product => (
                             <div key={product.id} className="product-card" style={{ background: 'var(--surface-lowest)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-                                <div style={{ height: '240px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <img src={product.image} alt={product.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} />
+                                <div style={{ height: '240px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                    <img 
+                                        src={product.image} 
+                                        alt={product.title} 
+                                        referrerPolicy="no-referrer"
+                                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} 
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = "/products/placeholder.png";
+                                        }}
+                                    />
                                 </div>
                                 <div style={{ padding: '2rem' }}>
                                     <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem' }}>{product.title}</h3>
