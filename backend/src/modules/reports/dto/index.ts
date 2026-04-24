@@ -1,2 +1,1 @@
-export { CreateReportDto } from './create-reports.dto';
-export { UpdateReportDto } from './update-reports.dto';
+export { CreateReportDto, UpdateReportDto, SalesReportQueryDto, InventoryReportQueryDto, ReportPeriod } from './create-reports.dto';

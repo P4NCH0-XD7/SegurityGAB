@@ -10,10 +10,10 @@ import { SalesModule } from './modules/sales/sales.module';
 import { InventorysModule } from './modules/inventory/inventory.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { WishlistsModule } from './modules/wishlist/wishlist.module';
+import { ReportsModule } from './modules/reports/reports.module';
 // import { CategoriesModule } from './modules/categories/categories.module';
 // import { SuppliersModule } from './modules/suppliers/suppliers.module';
 // import { SaleDetailsModule } from './modules/sale-details/sale-details.module';
-// import { ReportsModule } from './modules/reports/reports.module';
 
 // Database
 import { DatabaseModule } from './database/database.module';
@@ -40,10 +40,10 @@ import { RolesModule } from './modules/roles/roles.module';
     InventorysModule,
     CustomersModule,
     WishlistsModule,
+    ReportsModule,
     // CategoriesModule,
     // SuppliersModule,
     // SaleDetailsModule,
-    // ReportsModule,
   ],
   controllers: [],
   providers: [],
