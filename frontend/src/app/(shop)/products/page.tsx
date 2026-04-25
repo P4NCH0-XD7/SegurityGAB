@@ -69,20 +69,22 @@ export default function ProductsPage() {
                 ) : products.length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
                         {products.map(product => (
-                            <div key={product.id} className="product-card" style={{ background: 'var(--surface-lowest)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-                                <div style={{ height: '240px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                                    <img 
-                                        src={product.image} 
-                                        alt={product.title} 
-                                        referrerPolicy="no-referrer"
-                                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} 
-                                        onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.src = "/products/placeholder.png";
-                                        }}
-                                    />
-                                </div>
-                                <div style={{ padding: '2rem' }}>
+                            <div key={product.id} className="product-card" style={{ background: 'var(--surface-lowest)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                                <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                                    <div style={{ height: '240px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                        <img 
+                                            src={product.image} 
+                                            alt={product.title} 
+                                            referrerPolicy="no-referrer"
+                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} 
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.src = "/products/placeholder.png";
+                                            }}
+                                        />
+                                    </div>
+                                    <div style={{ padding: '2rem', paddingBottom: '1rem' }}>
+
                                     <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{product.title}</h3>
                                     <p style={{ 
                                         fontSize: '0.85rem', 
@@ -100,7 +102,10 @@ export default function ProductsPage() {
                                     }}>
                                         {product.description || "Sin descripción disponible"}
                                     </p>
-                                    <p style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '1.5rem' }}>{product.price}</p>
+                                    <p style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '0.5rem' }}>{product.price}</p>
+                                    </div>
+                                </Link>
+                                <div style={{ padding: '0 2rem 2rem 2rem', marginTop: 'auto' }}>
                                     <button 
                                         onClick={() => handleAddToCart(product)}
                                         className="btn btn-primary" 
@@ -109,6 +114,7 @@ export default function ProductsPage() {
                                         Comprar ahora
                                     </button>
                                 </div>
+
                             </div>
                         ))}
                     </div>
