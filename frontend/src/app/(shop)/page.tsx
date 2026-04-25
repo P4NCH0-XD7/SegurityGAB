@@ -141,15 +141,21 @@ export default function LandingPage() {
                   background: 'var(--surface-lowest)', 
                   borderRadius: 'var(--radius-lg)',
                   overflow: 'hidden',
-                  transition: 'all 0.3s ease'
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}>
-                  <div style={{ height: '300px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-                     {/* Silhouetted image effect */}
-                    <img src={product.image} alt={product.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} />
-                  </div>
-                  <div style={{ padding: '2rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', fontWeight: '600' }}>{product.title}</h3>
-                    <p style={{ fontWeight: '700', color: 'var(--on-surface)', fontSize: '1.5rem', marginBottom: '1.5rem' }}>{product.price}</p>
+                  <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                    <div style={{ height: '300px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                       {/* Silhouetted image effect */}
+                      <img src={product.image} alt={product.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} />
+                    </div>
+                    <div style={{ padding: '2rem', paddingBottom: '1rem' }}>
+                      <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', fontWeight: '600' }}>{product.title}</h3>
+                      <p style={{ fontWeight: '700', color: 'var(--on-surface)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>{product.price}</p>
+                    </div>
+                  </Link>
+                  <div style={{ padding: '0 2rem 2rem 2rem', marginTop: 'auto' }}>
                     <button 
                       onClick={() => handleAddToCart(product)}
                       className="btn btn-primary" 

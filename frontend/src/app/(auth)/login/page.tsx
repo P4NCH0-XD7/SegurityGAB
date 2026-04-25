@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
     try {
       const response = await fetch(`${apiUrl}/auth/login`, {

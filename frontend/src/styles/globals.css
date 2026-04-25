@@ -1,6 +1,7 @@
 :root {
   /* Precision Sanctuary - Guardian's Architectural Ethos */
   --primary: #115cb9;
+  --primary-light: #1b7af2;
   --primary-dim: #0050a7;
   --secondary: #006f25;
   --secondary-container: #83fc8e;
@@ -80,7 +81,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary:hover {
-  background: var(--primary-dark);
+  background: var(--primary-light);
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
