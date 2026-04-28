@@ -154,7 +154,10 @@ export default function LandingPage() {
                     </div>
                     <div style={{ padding: '2rem', paddingBottom: '1rem' }}>
                       <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', fontWeight: '600' }}>{product.title}</h3>
-                      <p style={{ fontWeight: '700', color: 'var(--on-surface)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>{formatPrice(product.price)}</p>
+                      <p style={{ fontWeight: '700', color: 'var(--on-surface)', fontSize: '1.5rem', marginBottom: '0.25rem' }}>{formatPrice(product.price)}</p>
+                      <p style={{ fontSize: '0.75rem', color: product.stock > 0 ? 'var(--secondary)' : 'var(--error)', fontWeight: '600' }}>
+                        {product.stock > 0 ? `${product.stock} disponibles` : 'Agotado'}
+                      </p>
                     </div>
                   </Link>
                   <div style={{ padding: '0 2rem 2rem 2rem', marginTop: 'auto' }}>
