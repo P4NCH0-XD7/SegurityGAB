@@ -1,8 +1,32 @@
+'use client';
+
 import Navbar from "@/components/shop/Navbar";
 import Footer from "@/components/shop/Footer";
-import { FaLock, FaCreditCard, FaTruck } from "react-icons/fa";
+import { FaLock, FaCreditCard, FaTruck, FaShoppingCart } from "react-icons/fa";
+import { useCartStore } from "@/store/useCartStore";
+import { formatPrice } from "@/utils/formatters";
+import Link from "next/link";
 
 export default function CheckoutPage() {
+    const { items, getTotal } = useCartStore();
+
+    if (items.length === 0) {
+        return (
+            <div style={{ background: 'var(--surface)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                <Navbar />
+                <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 1.5rem' }}>
+                    <div style={{ background: 'var(--surface-low)', width: '120px', height: '120px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2rem', color: 'var(--outline-variant)' }}>
+                        <FaShoppingCart size={48} />
+                    </div>
+                    <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>No hay productos para pagar</h1>
+                    <p style={{ color: 'var(--on-surface-variant)', marginBottom: '2.5rem' }}>Tu carrito está vacío.</p>
+                    <Link href="/products" className="btn btn-primary" style={{ padding: '1rem 2.5rem' }}>Ir a la tienda</Link>
+                </main>
+                <Footer />
+            </div>
+        );
+    }
+
     return (
         <div style={{ background: 'var(--surface)', minHeight: '100vh' }}>
             <Navbar />
@@ -54,7 +78,7 @@ export default function CheckoutPage() {
                         </div>
                     </div>
 
-                    {/* Order Summary Summary */}
+                    {/* Order Summary */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                         <div style={{ 
                             background: 'var(--surface-lowest)', 
@@ -63,18 +87,26 @@ export default function CheckoutPage() {
                             height: 'fit-content'
                         }}>
                              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '2rem' }}>Resumen</h3>
-                             <div style={{ display: 'flex', marginBottom: '2rem', gap: '1rem', alignItems: 'center' }}>
-                                 <div style={{ width: '60px', height: '60px', background: 'var(--surface-low)', borderRadius: '0.5rem' }}></div>
-                                 <div style={{ flex: 1 }}>
-                                     <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Cámara IP Domo 4K</div>
-                                     <div style={{ fontSize: '0.875rem', color: 'var(--primary)', fontWeight: '700' }}>$129.000</div>
-                                 </div>
+                             
+                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', maxHeight: '100px', overflowY: 'auto' }}>
+                                {items.map(item => (
+                                    <div key={item.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                        <div style={{ width: '50px', height: '50px', background: 'var(--surface-low)', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                            <img src={item.image} alt={item.title} style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>{item.title}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>Cant: {item.quantity}</div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: '700' }}>{formatPrice(item.price * (item.quantity || 1))}</div>
+                                        </div>
+                                    </div>
+                                ))}
                              </div>
 
                              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--on-surface-variant)' }}>
                                     <span>Subtotal</span>
-                                    <span>$129.000</span>
+                                    <span>{formatPrice(getTotal())}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--on-surface-variant)' }}>
                                     <span>Envío</span>
@@ -83,7 +115,7 @@ export default function CheckoutPage() {
                                 <div style={{ height: '1px', background: 'var(--surface-low)', margin: '0.5rem 0' }}></div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.5rem', fontWeight: '800' }}>
                                     <span>Total</span>
-                                    <span>$129.000</span>
+                                    <span>{formatPrice(getTotal())}</span>
                                 </div>
                             </div>
                             

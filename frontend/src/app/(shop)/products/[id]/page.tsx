@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import { useCartStore } from "@/store/useCartStore";
 import toast from "react-hot-toast";
 import Link from 'next/link';
+import { formatPrice } from '@/utils/formatters';
 
 export default function ProductDetailPage() {
     const params = useParams();
@@ -40,8 +41,7 @@ export default function ProductDetailPage() {
                         id: p.id,
                         title: p.name,
                         description: p.description,
-                        rawPrice: Number(p.price),
-                        price: `$${Number(p.price).toLocaleString('es-CO')}`,
+                        price: Number(p.price),
                         image: getDisplayImageUrl(p.imageUrl) || "/products/placeholder.png",
                         sku: p.sku,
                         stock: p.stock
@@ -115,7 +115,7 @@ export default function ProductDetailPage() {
                             )}
                             
                             <div style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--primary)', marginBottom: '2rem' }}>
-                                {product.price}
+                                {formatPrice(product.price)}
                             </div>
                             
                             <div style={{ marginBottom: '2.5rem' }}>
