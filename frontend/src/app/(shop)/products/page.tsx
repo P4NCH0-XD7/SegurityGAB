@@ -7,6 +7,7 @@ import Footer from "@/components/shop/Footer";
 import Link from "next/link";
 import { useCartStore } from "@/store/useCartStore";
 import toast from "react-hot-toast";
+import { formatPrice } from '@/utils/formatters';
 
 export default function ProductsPage() {
     const addItem = useCartStore((state) => state.addItem);
@@ -38,7 +39,7 @@ export default function ProductsPage() {
                           id: p.id,
                           title: p.name,
                           description: p.description,
-                          price: `$${Number(p.price).toLocaleString('es-CO')}`,
+                          price: Number(p.price),
                           image: getDisplayImageUrl(p.imageUrl) || "/products/placeholder.png", // fallback image
                       }));
                     setProducts(visible);
@@ -102,7 +103,7 @@ export default function ProductsPage() {
                                     }}>
                                         {product.description || "Sin descripción disponible"}
                                     </p>
-                                    <p style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '0.5rem' }}>{product.price}</p>
+                                    <p style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '0.5rem' }}>{formatPrice(product.price)}</p>
                                     </div>
                                 </Link>
                                 <div style={{ padding: '0 2rem 2rem 2rem', marginTop: 'auto' }}>

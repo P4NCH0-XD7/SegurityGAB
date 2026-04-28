@@ -9,6 +9,7 @@ import Footer from "@/components/shop/Footer";
 import "../../styles/shop/landing.css";
 import { useCartStore } from "@/store/useCartStore";
 import toast from "react-hot-toast";
+import { formatPrice } from '@/utils/formatters';
 
 export default function LandingPage() {
   const addItem = useCartStore((state) => state.addItem);
@@ -38,8 +39,8 @@ export default function LandingPage() {
             .map((p: any) => ({
               id: p.id,
               title: p.name,
-              // Convert to money string format expected by UI
-              price: `$${Number(p.price).toLocaleString('es-CO')}`,
+              // Convert to number for store
+              price: Number(p.price),
               image: p.imageUrl || "/products/placeholder.png", // fallback image
             }));
           setProducts(visible);
@@ -152,7 +153,7 @@ export default function LandingPage() {
                     </div>
                     <div style={{ padding: '2rem', paddingBottom: '1rem' }}>
                       <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', fontWeight: '600' }}>{product.title}</h3>
-                      <p style={{ fontWeight: '700', color: 'var(--on-surface)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>{product.price}</p>
+                      <p style={{ fontWeight: '700', color: 'var(--on-surface)', fontSize: '1.5rem', marginBottom: '0.5rem' }}>{formatPrice(product.price)}</p>
                     </div>
                   </Link>
                   <div style={{ padding: '0 2rem 2rem 2rem', marginTop: 'auto' }}>
