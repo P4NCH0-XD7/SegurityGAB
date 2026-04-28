@@ -40,6 +40,7 @@ export default function ProductsPage() {
                           title: p.name,
                           description: p.description,
                           price: Number(p.price),
+                          stock: Number(p.stock),
                           image: getDisplayImageUrl(p.imageUrl) || "/products/placeholder.png", // fallback image
                       }));
                     setProducts(visible);
@@ -109,10 +110,16 @@ export default function ProductsPage() {
                                 <div style={{ padding: '0 2rem 2rem 2rem', marginTop: 'auto' }}>
                                     <button 
                                         onClick={() => handleAddToCart(product)}
+                                        disabled={product.stock <= 0}
                                         className="btn btn-primary" 
-                                        style={{ width: '100%', padding: '1rem', cursor: 'pointer' }}
+                                        style={{ 
+                                            width: '100%', 
+                                            padding: '1rem', 
+                                            cursor: product.stock > 0 ? 'pointer' : 'not-allowed',
+                                            opacity: product.stock > 0 ? 1 : 0.5
+                                        }}
                                     >
-                                        Comprar ahora
+                                        {product.stock > 0 ? 'Añadir al Carrito' : 'Agotado'}
                                     </button>
                                 </div>
 

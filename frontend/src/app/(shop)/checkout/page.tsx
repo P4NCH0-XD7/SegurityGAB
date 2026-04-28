@@ -1,14 +1,87 @@
 'use client';
 
+import { useState } from "react";
 import Navbar from "@/components/shop/Navbar";
 import Footer from "@/components/shop/Footer";
-import { FaLock, FaCreditCard, FaTruck, FaShoppingCart } from "react-icons/fa";
+import { FaLock, FaCreditCard, FaTruck, FaShoppingCart, FaSpinner } from "react-icons/fa";
 import { useCartStore } from "@/store/useCartStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { formatPrice } from "@/utils/formatters";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function CheckoutPage() {
-    const { items, getTotal } = useCartStore();
+    const { items, getTotal, clearCart } = useCartStore();
+    const { user, token } = useAuthStore();
+    const router = useRouter();
+    const [isProcessing, setIsProcessing] = useState(false);
+    
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+
+    const [formData, setFormData] = useState({
+        fullName: '',
+        city: '',
+        phone: '',
+        address: ''
+    });
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handlePayment = async () => {
+        // Basic Validation
+        if (!formData.fullName || !formData.city || !formData.phone || !formData.address) {
+            toast.error("Por favor, completa todos los campos de envío");
+            return;
+        }
+
+        if (!user || !token) {
+            toast.error("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
+            router.push("/login?redirect=/checkout");
+            return;
+        }
+
+        setIsProcessing(true);
+        
+        try {
+            const saleData = {
+                userId: Number(user.id),
+                shippingAddress: `${formData.address}, ${formData.city} (Tel: ${formData.phone})`,
+                items: items.map(item => ({
+                    productId: item.id,
+                    quantity: item.quantity
+                }))
+            };
+
+            const response = await fetch(`${API_URL}/sales`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(saleData)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || "Error al procesar la venta");
+            }
+            
+            clearCart();
+            toast.success("¡Venta registrada con éxito!");
+            router.push("/checkout/success");
+
+        } catch (error: any) {
+            console.error("Payment error:", error);
+            toast.error(error.message || "Ocurrió un error inesperado durante el pago");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     if (items.length === 0) {
         return (
@@ -44,19 +117,47 @@ export default function CheckoutPage() {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                 <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Nombre Completo</label>
-                                    <input type="text" style={{ padding: '1rem', background: 'var(--surface-low)', border: 'none', borderRadius: 'var(--radius)', outline: 'none' }} placeholder="Ej. Juan Pérez" />
+                                    <input 
+                                        type="text" 
+                                        name="fullName"
+                                        value={formData.fullName}
+                                        onChange={handleInputChange}
+                                        style={{ padding: '1rem', background: 'var(--surface-low)', border: 'none', borderRadius: 'var(--radius)', outline: 'none' }} 
+                                        placeholder="Ej. Juan Pérez" 
+                                    />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Ciudad</label>
-                                    <input type="text" style={{ padding: '1rem', background: 'var(--surface-low)', border: 'none', borderRadius: 'var(--radius)', outline: 'none' }} placeholder="Medellín" />
+                                    <input 
+                                        type="text" 
+                                        name="city"
+                                        value={formData.city}
+                                        onChange={handleInputChange}
+                                        style={{ padding: '1rem', background: 'var(--surface-low)', border: 'none', borderRadius: 'var(--radius)', outline: 'none' }} 
+                                        placeholder="Medellín" 
+                                    />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Teléfono</label>
-                                    <input type="text" style={{ padding: '1rem', background: 'var(--surface-low)', border: 'none', borderRadius: 'var(--radius)', outline: 'none' }} placeholder="+57 300..." />
+                                    <input 
+                                        type="text" 
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        style={{ padding: '1rem', background: 'var(--surface-low)', border: 'none', borderRadius: 'var(--radius)', outline: 'none' }} 
+                                        placeholder="+57 300..." 
+                                    />
                                 </div>
                                 <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Dirección</label>
-                                    <input type="text" style={{ padding: '1rem', background: 'var(--surface-low)', border: 'none', borderRadius: 'var(--radius)', outline: 'none' }} placeholder="Calle 123..." />
+                                    <input 
+                                        type="text" 
+                                        name="address"
+                                        value={formData.address}
+                                        onChange={handleInputChange}
+                                        style={{ padding: '1rem', background: 'var(--surface-low)', border: 'none', borderRadius: 'var(--radius)', outline: 'none' }} 
+                                        placeholder="Calle 123..." 
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -88,7 +189,7 @@ export default function CheckoutPage() {
                         }}>
                              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '2rem' }}>Resumen</h3>
                              
-                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', maxHeight: '100px', overflowY: 'auto' }}>
+                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', maxHeight: '300px', overflowY: 'auto' }}>
                                 {items.map(item => (
                                     <div key={item.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                         <div style={{ width: '50px', height: '50px', background: 'var(--surface-low)', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -119,8 +220,27 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
                             
-                            <button className="btn btn-primary" style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-                                <FaLock /> Pagar Ahora
+                            <button 
+                                onClick={handlePayment}
+                                disabled={isProcessing}
+                                className="btn btn-primary" 
+                                style={{ 
+                                    width: '100%', 
+                                    padding: '1.25rem', 
+                                    fontSize: '1.1rem', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    gap: '0.75rem',
+                                    cursor: isProcessing ? 'not-allowed' : 'pointer',
+                                    opacity: isProcessing ? 0.7 : 1
+                                }}
+                            >
+                                {isProcessing ? (
+                                    <><FaSpinner className="spin" /> Procesando...</>
+                                ) : (
+                                    <><FaLock /> Pagar Ahora</>
+                                )}
                             </button>
                             <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--on-surface-variant)', fontSize: '0.75rem' }}>
                                 Tus datos están cifrados y protegidos.

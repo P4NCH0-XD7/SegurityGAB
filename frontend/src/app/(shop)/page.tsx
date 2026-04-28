@@ -41,6 +41,7 @@ export default function LandingPage() {
               title: p.name,
               // Convert to number for store
               price: Number(p.price),
+              stock: Number(p.stock),
               image: p.imageUrl || "/products/placeholder.png", // fallback image
             }));
           setProducts(visible);
@@ -159,10 +160,16 @@ export default function LandingPage() {
                   <div style={{ padding: '0 2rem 2rem 2rem', marginTop: 'auto' }}>
                     <button 
                       onClick={() => handleAddToCart(product)}
+                      disabled={product.stock <= 0}
                       className="btn btn-primary" 
-                      style={{ width: '100%', padding: '1rem', cursor: 'pointer' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '1rem', 
+                        cursor: product.stock > 0 ? 'pointer' : 'not-allowed',
+                        opacity: product.stock > 0 ? 1 : 0.5
+                      }}
                     >
-                      Añadir al Carrito
+                      {product.stock > 0 ? 'Añadir al Carrito' : 'Agotado'}
                     </button>
                   </div>
                 </div>
