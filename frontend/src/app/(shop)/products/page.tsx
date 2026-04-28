@@ -104,7 +104,10 @@ export default function ProductsPage() {
                                     }}>
                                         {product.description || "Sin descripción disponible"}
                                     </p>
-                                    <p style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '0.5rem' }}>{formatPrice(product.price)}</p>
+                                    <p style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '0.25rem' }}>{formatPrice(product.price)}</p>
+                                    <p style={{ fontSize: '0.7rem', color: product.stock > 0 ? 'var(--secondary)' : 'var(--error)', fontWeight: '600' }}>
+                                        {product.stock > 0 ? `${product.stock} disponibles` : 'Sin stock'}
+                                    </p>
                                     </div>
                                 </Link>
                                 <div style={{ padding: '0 2rem 2rem 2rem', marginTop: 'auto' }}>
