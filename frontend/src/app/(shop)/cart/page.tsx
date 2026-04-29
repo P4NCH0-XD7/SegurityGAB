@@ -8,6 +8,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { formatPrice } from "@/utils/formatters";
 
 export default function CartPage() {
     const { items, updateQuantity, removeItem, getTotal } = useCartStore();
@@ -23,13 +24,7 @@ export default function CartPage() {
         router.push("/checkout");
     };
 
-    const formatPrice = (priceNum: number) => {
-        return new Intl.NumberFormat('es-CO', {
-            style: 'currency',
-            currency: 'COP',
-            minimumFractionDigits: 0
-        }).format(priceNum);
-    };
+
 
     if (items.length === 0) {
         return (
@@ -72,7 +67,7 @@ export default function CartPage() {
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem' }}>{item.title}</h3>
-                                    <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.9rem', marginBottom: '1rem' }}>Precio unitario: {item.price}</p>
+                                    <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.9rem', marginBottom: '1rem' }}>Precio unitario: {formatPrice(item.price)}</p>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface-low)', borderRadius: '2rem', padding: '0.25rem' }}>
                                             <button 
@@ -101,7 +96,7 @@ export default function CartPage() {
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)' }}>{item.price}</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)' }}>{formatPrice(item.price * (item.quantity || 1))}</div>
                                 </div>
                             </div>
                         ))}

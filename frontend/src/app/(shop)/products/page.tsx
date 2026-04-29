@@ -7,6 +7,7 @@ import Footer from "@/components/shop/Footer";
 import Link from "next/link";
 import { useCartStore } from "@/store/useCartStore";
 import toast from "react-hot-toast";
+import { formatPrice } from '@/utils/formatters';
 
 export default function ProductsPage() {
     const addItem = useCartStore((state) => state.addItem);
@@ -38,7 +39,8 @@ export default function ProductsPage() {
                           id: p.id,
                           title: p.name,
                           description: p.description,
-                          price: `$${Number(p.price).toLocaleString('es-CO')}`,
+                          price: Number(p.price),
+                          stock: Number(p.stock),
                           image: getDisplayImageUrl(p.imageUrl) || "/products/placeholder.png", // fallback image
                       }));
                     setProducts(visible);
@@ -69,20 +71,22 @@ export default function ProductsPage() {
                 ) : products.length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
                         {products.map(product => (
-                            <div key={product.id} className="product-card" style={{ background: 'var(--surface-lowest)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-                                <div style={{ height: '240px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                                    <img 
-                                        src={product.image} 
-                                        alt={product.title} 
-                                        referrerPolicy="no-referrer"
-                                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} 
-                                        onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.src = "/products/placeholder.png";
-                                        }}
-                                    />
-                                </div>
-                                <div style={{ padding: '2rem' }}>
+                            <div key={product.id} className="product-card" style={{ background: 'var(--surface-lowest)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                                <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                                    <div style={{ height: '240px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                        <img 
+                                            src={product.image} 
+                                            alt={product.title} 
+                                            referrerPolicy="no-referrer"
+                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }} 
+                                            onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.src = "/products/placeholder.png";
+                                            }}
+                                        />
+                                    </div>
+                                    <div style={{ padding: '2rem', paddingBottom: '1rem' }}>
+
                                     <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{product.title}</h3>
                                     <p style={{ 
                                         fontSize: '0.85rem', 
@@ -100,15 +104,28 @@ export default function ProductsPage() {
                                     }}>
                                         {product.description || "Sin descripción disponible"}
                                     </p>
-                                    <p style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '1.5rem' }}>{product.price}</p>
+                                    <p style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '0.25rem' }}>{formatPrice(product.price)}</p>
+                                    <p style={{ fontSize: '0.7rem', color: product.stock > 0 ? 'var(--secondary)' : 'var(--error)', fontWeight: '600' }}>
+                                        {product.stock > 0 ? `${product.stock} disponibles` : 'Sin stock'}
+                                    </p>
+                                    </div>
+                                </Link>
+                                <div style={{ padding: '0 2rem 2rem 2rem', marginTop: 'auto' }}>
                                     <button 
                                         onClick={() => handleAddToCart(product)}
+                                        disabled={product.stock <= 0}
                                         className="btn btn-primary" 
-                                        style={{ width: '100%', padding: '1rem', cursor: 'pointer' }}
+                                        style={{ 
+                                            width: '100%', 
+                                            padding: '1rem', 
+                                            cursor: product.stock > 0 ? 'pointer' : 'not-allowed',
+                                            opacity: product.stock > 0 ? 1 : 0.5
+                                        }}
                                     >
-                                        Comprar ahora
+                                        {product.stock > 0 ? 'Añadir al Carrito' : 'Agotado'}
                                     </button>
                                 </div>
+
                             </div>
                         ))}
                     </div>
