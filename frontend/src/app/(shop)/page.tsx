@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FaCamera, FaBell, FaShieldAlt, FaTools, FaHeadset, FaCogs } from "react-icons/fa";
 import Navbar from "@/components/shop/Navbar";
 import Footer from "@/components/shop/Footer";
+import SecurityNews from "@/components/dashboard/SecurityNews";
 import "../../styles/shop/landing.css";
 import { useCartStore } from "@/store/useCartStore";
 import toast from "react-hot-toast";
@@ -166,6 +167,29 @@ export default function LandingPage() {
                No hay productos destacados disponibles en este momento.
              </div>
           )}
+        </div>
+      </section>
+
+      {/* Security News Section */}
+      <section className="security-news" style={{ padding: '100px 0', background: 'var(--surface)' }}>
+        <div className="container">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'start' }}>
+            <div>
+              <label style={{ display: 'block', textTransform: 'uppercase', color: 'var(--primary)', fontWeight: '700', letterSpacing: '0.05em', marginBottom: '1rem', fontSize: '0.8rem' }}>Inteligencia de Seguridad</label>
+              <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', letterSpacing: '-0.01em' }}>Actualidad y Tendencias</h2>
+              <p style={{ color: 'var(--on-surface-variant)', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '2rem' }}>
+                Mantente informado sobre las últimas amenazas, vulnerabilidades y avances tecnológicos en el mundo de la seguridad electrónica. 
+                Nuestro feed en tiempo real te conecta con las fuentes más confiables de la industria.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ width: '40px', height: '2px', background: 'var(--primary)' }}></div>
+                <span style={{ fontWeight: '600', color: 'var(--on-surface)' }}>Feed actualizado 24/7</span>
+              </div>
+            </div>
+            <div style={{ maxHeight: '600px', overflowY: 'hidden' }}>
+              <SecurityNews />
+            </div>
+          </div>
         </div>
       </section>
 

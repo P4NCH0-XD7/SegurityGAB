@@ -1,4 +1,5 @@
 import { FaChartLine, FaShoppingBag, FaUserCheck, FaExclamationTriangle, FaBoxOpen, FaClipboardList, FaTicketAlt } from "react-icons/fa";
+import SecurityNews from "@/components/dashboard/SecurityNews";
 
 export default function DashboardPage() {
     const stats = [
@@ -118,35 +119,39 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                <div className="stat-card" style={{ height: 'fit-content' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '2rem', color: 'var(--on-surface)' }}>Alertas Críticas</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        {alerts.map((alert, idx) => (
-                            <div key={idx} className="alert-item" style={{ background: 'var(--surface-low)', transition: 'all 0.2s ease' }}>
-                                <div className="icon-box" style={{ background: `${alert.color}15`, color: alert.color, borderRadius: '0.75rem' }}>
-                                    {alert.icon}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <div className="stat-card" style={{ height: 'fit-content' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '2rem', color: 'var(--on-surface)' }}>Alertas Críticas</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {alerts.map((alert, idx) => (
+                                <div key={idx} className="alert-item" style={{ background: 'var(--surface-low)', transition: 'all 0.2s ease' }}>
+                                    <div className="icon-box" style={{ background: `${alert.color}15`, color: alert.color, borderRadius: '0.75rem' }}>
+                                        {alert.icon}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--on-surface)' }}>{alert.title}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', marginTop: '0.2rem' }}>{alert.desc}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--on-surface)' }}>{alert.title}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)', marginTop: '0.2rem' }}>{alert.desc}</div>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
+                        <button style={{ 
+                            width: '100%', 
+                            marginTop: '2.5rem', 
+                            padding: '1rem', 
+                            borderRadius: 'var(--radius)', 
+                            border: 'none', 
+                            background: 'var(--surface-high)', 
+                            color: 'var(--on-surface)',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer'
+                        }}>
+                            Ver todas las alertas
+                        </button>
                     </div>
-                    <button style={{ 
-                        width: '100%', 
-                        marginTop: '2.5rem', 
-                        padding: '1rem', 
-                        borderRadius: 'var(--radius)', 
-                        border: 'none', 
-                        background: 'var(--surface-high)', 
-                        color: 'var(--on-surface)',
-                        fontWeight: '700',
-                        fontSize: '0.9rem',
-                        cursor: 'pointer'
-                    }}>
-                        Ver todas las alertas
-                    </button>
+
+                    <SecurityNews />
                 </div>
             </div>
         </div>
