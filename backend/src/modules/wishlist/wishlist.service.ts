@@ -58,10 +58,16 @@ export class WishlistsService {
     const saved = await this.wishlistRepository.save(item);
 
     // Retornar con relaciones incluidas
-    return this.wishlistRepository.findOne({
+    const result = await this.wishlistRepository.findOne({
       where: { id: saved.id },
       relations: ['product', 'product.category'],
     });
+
+    if (!result) {
+      throw new NotFoundException('No se pudo recuperar el favorito recién creado.');
+    }
+
+    return result;
   }
 
   // ── Eliminar un favorito (por ID del favorito, no del producto)

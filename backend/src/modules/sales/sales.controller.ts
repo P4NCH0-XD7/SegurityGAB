@@ -100,9 +100,8 @@ export class SalesController {
     return this.salesService.create(createSaleDto);
   }
 
-  //  PATCH /sales/:id/status → Solo Admin 
+  //  PATCH /sales/:id/status → Admin o Propietario (solo para cancelar) 
   @Patch(':id/status')
-  @Roles(Role.Admin)
   @ApiOperation({ summary: 'Cambiar estado de una venta (Admin)' })
   @ApiResponse({ status: 200, description: 'Estado actualizado. Si se cancela, el stock se restaura.' })
   @ApiResponse({ status: 400, description: 'Transición de estado inválida' })
