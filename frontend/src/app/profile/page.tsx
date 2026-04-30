@@ -17,19 +17,79 @@ export default function ProfilePage() {
         email: user?.email || '',
     });
 
+    const [orders, setOrders] = useState<any[]>([]);
+    const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+
     useEffect(() => {
         if (!isAuthenticated) {
             router.replace("/login?redirect=/profile");
+            return;
         }
-    }, [isAuthenticated, router]);
+
+        const fetchOrders = async () => {
+            try {
+                const response = await fetch(`${API_URL}/sales/my`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setOrders(data);
+                }
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+            } finally {
+                setIsLoadingOrders(false);
+            }
+        };
+
+        fetchOrders();
+    }, [isAuthenticated, router, token, API_URL]);
 
     if (!isAuthenticated || !user) {
         return null;
     }
 
+    const handleCancelOrder = async (orderId: number) => {
+        if (!window.confirm("¿Estás seguro de que deseas cancelar este pedido?")) return;
+
+        try {
+            const response = await fetch(`${API_URL}/sales/${orderId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: 'CANCELLED' })
+            });
+
+            if (response.ok) {
+                toast.success("Pedido cancelado correctamente");
+                setSelectedOrder(null);
+                // Refrescar la lista de pedidos
+                const refreshResponse = await fetch(`${API_URL}/sales/my`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (refreshResponse.ok) {
+                    const data = await refreshResponse.json();
+                    setOrders(data);
+                }
+            } else {
+                const error = await response.json();
+                toast.error(error.message || "Error al cancelar el pedido");
+            }
+        } catch (error) {
+            toast.error("Error de conexión");
+        }
+    };
+
     const handleSave = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+            const response = await fetch(`${API_URL}/users/me`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -50,6 +110,17 @@ export default function ProfilePage() {
         } catch (error) {
             toast.error("Error de conexión");
         }
+    };
+
+    const getStatusStyles = (status: string) => {
+        const styles: Record<string, { bg: string, color: string, label: string }> = {
+            'PENDING':   { bg: '#f39c1222', color: '#f39c12', label: 'Pendiente' },
+            'PAID':      { bg: '#2ecc7122', color: '#2ecc71', label: 'Pagado' },
+            'SHIPPED':   { bg: '#3498db22', color: '#3498db', label: 'Enviado' },
+            'DELIVERED': { bg: '#27ae6022', color: '#27ae60', label: 'Entregado' },
+            'CANCELLED': { bg: '#e74c3c22', color: '#e74c3c', label: 'Cancelado' },
+        };
+        return styles[status] || { bg: 'var(--surface-low)', color: 'var(--on-surface-variant)', label: status };
     };
 
     return (
@@ -123,7 +194,7 @@ export default function ProfilePage() {
                             <>
                                 <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>{user.name}</h2>
                                 <p style={{ color: 'var(--on-surface-variant)', marginBottom: '2rem' }}>
-                                    {user.roleId === 1 ? 'Administrador del Sistema' : 'Miembro desde 2024'}
+                                    {user.roleId === 1 ? 'Administrador del Sistema' : 'Miembro de SegurityGAB'}
                                 </p>
                                 
                                 <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -211,37 +282,232 @@ export default function ProfilePage() {
                                     <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <FaHistory color="var(--primary)" /> Pedidos Recientes
                                     </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        {[1, 2].map(i => (
-                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 0', borderBottom: i === 1 ? '1px solid var(--surface-low)' : 'none' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: '700' }}>Orden #GAB-2024-{i}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>20 Mar 2026 • $129.000</div>
-                                                </div>
-                                                <span style={{ padding: '0.35rem 0.75rem', borderRadius: '1rem', background: 'var(--secondary-container)', color: 'var(--secondary)', fontSize: '0.75rem', fontWeight: '700' }}>
-                                                    Completado
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <button style={{ 
-                                        width: '100%', 
-                                        marginTop: '2rem', 
-                                        padding: '1rem', 
-                                        borderRadius: 'var(--radius)', 
-                                        border: 'none', 
-                                        background: 'var(--surface-high)', 
-                                        color: 'var(--on-surface)',
-                                        fontWeight: '700'
-                                    }}>
-                                        Ver todo el historial
-                                    </button>
+                                    
+                                    {isLoadingOrders ? (
+                                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>
+                                            Cargando pedidos...
+                                        </div>
+                                    ) : orders.length === 0 ? (
+                                        <div style={{ padding: '3rem 2rem', textAlign: 'center', background: 'var(--surface-low)', borderRadius: 'var(--radius)', color: 'var(--on-surface-variant)' }}>
+                                            <div style={{ marginBottom: '1rem', fontSize: '2rem' }}>📦</div>
+                                            <p>Aún no has realizado ningún pedido.</p>
+                                            <Link href="/" className="btn btn-primary" style={{ marginTop: '1.5rem', display: 'inline-block' }}>
+                                                Explorar Tienda
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            {orders.slice(0, 5).map((order, i) => {
+                                                const { bg, color, label } = getStatusStyles(order.status);
+                                                return (
+                                                    <div 
+                                                        key={order.id} 
+                                                        onClick={() => setSelectedOrder(order)}
+                                                        style={{ 
+                                                            display: 'flex', 
+                                                            justifyContent: 'space-between', 
+                                                            alignItems: 'center', 
+                                                            padding: '1.25rem 1rem', 
+                                                            margin: '0 -1rem',
+                                                            borderRadius: 'var(--radius)',
+                                                            borderBottom: i < Math.min(orders.length, 5) - 1 ? '1px solid var(--surface-low)' : 'none',
+                                                            cursor: 'pointer',
+                                                            transition: 'background 0.2s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-low)'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                                    >
+                                                        <div>
+                                                            <div style={{ fontWeight: '700' }}>Orden #GAB-2024-{order.id}</div>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>
+                                                                {new Date(order.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })} • 
+                                                                <span style={{ fontWeight: '600', color: 'var(--on-surface)', marginLeft: '5px' }}>
+                                                                    ${Number(order.totalAmount).toLocaleString('es-CO')}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <span style={{ 
+                                                            padding: '0.35rem 0.75rem', 
+                                                            borderRadius: '1rem', 
+                                                            background: bg, 
+                                                            color: color, 
+                                                            fontSize: '0.75rem', 
+                                                            fontWeight: '700' 
+                                                        }}>
+                                                            {label}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {orders.length > 5 && (
+                                        <button style={{ 
+                                            width: '100%', 
+                                            marginTop: '2rem', 
+                                            padding: '1rem', 
+                                            borderRadius: 'var(--radius)', 
+                                            border: 'none', 
+                                            background: 'var(--surface-high)', 
+                                            color: 'var(--on-surface)',
+                                            fontWeight: '700'
+                                        }}>
+                                            Ver todo el historial ({orders.length})
+                                        </button>
+                                    )}
                                 </div>
                             </>
                         )}
                     </div>
                 </div>
             </main>
+
+            {/* Order Details Modal */}
+            {selectedOrder && (
+                <div style={{ 
+                    position: 'fixed', 
+                    top: 0, 
+                    left: 0, 
+                    right: 0, 
+                    bottom: 0, 
+                    background: 'rgba(0,0,0,0.6)', 
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    zIndex: 1000,
+                    padding: '1.5rem'
+                }} onClick={() => setSelectedOrder(null)}>
+                    <div style={{ 
+                        background: 'var(--surface-lowest)', 
+                        width: '100%', 
+                        maxWidth: '600px', 
+                        borderRadius: 'var(--radius-lg)', 
+                        padding: '2.5rem',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        position: 'relative'
+                    }} onClick={e => e.stopPropagation()}>
+                        <button 
+                            onClick={() => setSelectedOrder(null)}
+                            style={{ 
+                                position: 'absolute', 
+                                top: '1.5rem', 
+                                right: '1.5rem', 
+                                background: 'var(--surface-low)', 
+                                border: 'none', 
+                                width: '36px', 
+                                height: '36px', 
+                                borderRadius: '50%', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'var(--on-surface-variant)'
+                            }}
+                        >
+                            <FaTimes />
+                        </button>
+
+                        <h2 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.5rem' }}>Detalle de Pedido</h2>
+                        <p style={{ color: 'var(--on-surface-variant)', marginBottom: '2rem' }}>Orden #GAB-2024-{selectedOrder.id}</p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {/* Status Section */}
+                            <div style={{ background: 'var(--surface-low)', padding: '1.5rem', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontWeight: '700' }}>Estado del pedido</span>
+                                <span style={{ 
+                                    padding: '0.5rem 1rem', 
+                                    borderRadius: '1rem', 
+                                    background: getStatusStyles(selectedOrder.status).bg, 
+                                    color: getStatusStyles(selectedOrder.status).color,
+                                    fontWeight: '800',
+                                    fontSize: '0.85rem'
+                                }}>
+                                    {getStatusStyles(selectedOrder.status).label}
+                                </span>
+                            </div>
+
+                            {/* Products Section */}
+                            <div>
+                                <h4 style={{ fontWeight: '700', marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Productos</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {selectedOrder.details?.map((item: any) => (
+                                        <div key={item.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                            <div style={{ width: '60px', height: '60px', background: 'var(--surface-low)', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                                <img 
+                                                    src={item.product?.imageUrl || 'https://via.placeholder.com/60'} 
+                                                    alt={item.product?.name} 
+                                                    style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} 
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{item.product?.name}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>Cantidad: {item.quantity} • ${Number(item.unitPrice).toLocaleString('es-CO')} c/u</div>
+                                            </div>
+                                            <div style={{ fontWeight: '700', color: 'var(--primary)' }}>
+                                                ${Number(item.subtotal).toLocaleString('es-CO')}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ height: '1px', background: 'var(--surface-low)' }}></div>
+
+                            {/* Shipping Info */}
+                            <div>
+                                <h4 style={{ fontWeight: '700', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Dirección de Envío</h4>
+                                <p style={{ fontSize: '0.95rem' }}>{selectedOrder.shippingAddress}</p>
+                            </div>
+
+                            <div style={{ height: '1px', background: 'var(--surface-low)' }}></div>
+
+                            {/* Total Section */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                                <span style={{ fontSize: '1.25rem', fontWeight: '800' }}>Total Pagado</span>
+                                <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)' }}>
+                                    ${Number(selectedOrder.totalAmount).toLocaleString('es-CO')}
+                                </span>
+                            </div>
+
+                            {/* Cancel Button */}
+                            {selectedOrder.status === 'PENDING' && (
+                                <button 
+                                    onClick={() => handleCancelOrder(selectedOrder.id)}
+                                    style={{ 
+                                        marginTop: '2rem',
+                                        padding: '1rem',
+                                        background: 'rgba(231, 76, 60, 0.1)',
+                                        color: '#e74c3c',
+                                        border: '1px solid #e74c3c',
+                                        borderRadius: 'var(--radius)',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#e74c3c';
+                                        e.currentTarget.style.color = 'white';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(231, 76, 60, 0.1)';
+                                        e.currentTarget.style.color = '#e74c3c';
+                                    }}
+                                >
+                                    <FaTimes /> Cancelar Pedido
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <Footer />
         </div>
