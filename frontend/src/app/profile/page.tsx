@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { FaUser, FaEnvelope, FaMapMarkerAlt, FaShieldAlt, FaHistory, FaEdit, FaCheck, FaTimes, FaSignOutAlt } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaMapMarkerAlt, FaShieldAlt, FaHistory, FaEdit, FaCheck, FaTimes, FaSignOutAlt, FaShoppingCart } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -20,6 +20,7 @@ export default function ProfilePage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoadingOrders, setIsLoadingOrders] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [showAllOrders, setShowAllOrders] = useState(false);
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
@@ -70,7 +71,6 @@ export default function ProfilePage() {
             if (response.ok) {
                 toast.success("Pedido cancelado correctamente");
                 setSelectedOrder(null);
-                // Refrescar la lista de pedidos
                 const refreshResponse = await fetch(`${API_URL}/sales/my`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -100,7 +100,7 @@ export default function ProfilePage() {
 
             if (response.ok) {
                 const updatedUser = await response.json();
-                updateUser(updatedUser); // Actualiza el store global
+                updateUser(updatedUser);
                 toast.success("Perfil actualizado correctamente");
                 setIsEditing(false);
             } else {
@@ -236,7 +236,7 @@ export default function ProfilePage() {
 
                     {/* Dashboard Sections */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        {user.roleId === 1 ? (
+                        {user.roleId === 1 && (
                             /* Admin Specific Sections */
                             <div style={{ 
                                 background: 'var(--surface-lowest)', 
@@ -269,96 +269,109 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
                                     </Link>
+                                    <Link href="/dashboard/sales" style={{ textDecoration: 'none' }}>
+                                        <div style={{ background: 'var(--surface-low)', padding: '1.5rem', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                                            <div style={{ background: 'rgba(52, 152, 219, 0.1)', width: '40px', height: '40px', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3498db' }}>
+                                                <FaShoppingCart />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--on-surface)' }}>Gestión de Pedidos</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>Ver y actualizar todas las ventas</div>
+                                            </div>
+                                        </div>
+                                    </Link>
                                 </div>
                             </div>
-                        ) : (
-                            /* Client Specific Sections */
-                            <>
-                                <div style={{ 
-                                    background: 'var(--surface-lowest)', 
-                                    padding: '2.5rem', 
-                                    borderRadius: 'var(--radius-lg)'
-                                }}>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <FaHistory color="var(--primary)" /> Pedidos Recientes
-                                    </h3>
-                                    
-                                    {isLoadingOrders ? (
-                                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>
-                                            Cargando pedidos...
-                                        </div>
-                                    ) : orders.length === 0 ? (
-                                        <div style={{ padding: '3rem 2rem', textAlign: 'center', background: 'var(--surface-low)', borderRadius: 'var(--radius)', color: 'var(--on-surface-variant)' }}>
-                                            <div style={{ marginBottom: '1rem', fontSize: '2rem' }}>📦</div>
-                                            <p>Aún no has realizado ningún pedido.</p>
-                                            <Link href="/" className="btn btn-primary" style={{ marginTop: '1.5rem', display: 'inline-block' }}>
-                                                Explorar Tienda
-                                            </Link>
-                                        </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                            {orders.slice(0, 5).map((order, i) => {
-                                                const { bg, color, label } = getStatusStyles(order.status);
-                                                return (
-                                                    <div 
-                                                        key={order.id} 
-                                                        onClick={() => setSelectedOrder(order)}
-                                                        style={{ 
-                                                            display: 'flex', 
-                                                            justifyContent: 'space-between', 
-                                                            alignItems: 'center', 
-                                                            padding: '1.25rem 1rem', 
-                                                            margin: '0 -1rem',
-                                                            borderRadius: 'var(--radius)',
-                                                            borderBottom: i < Math.min(orders.length, 5) - 1 ? '1px solid var(--surface-low)' : 'none',
-                                                            cursor: 'pointer',
-                                                            transition: 'background 0.2s ease'
-                                                        }}
-                                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-low)'}
-                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                                    >
-                                                        <div>
-                                                            <div style={{ fontWeight: '700' }}>Orden #GAB-2024-{order.id}</div>
-                                                            <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>
-                                                                {new Date(order.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })} • 
-                                                                <span style={{ fontWeight: '600', color: 'var(--on-surface)', marginLeft: '5px' }}>
-                                                                    ${Number(order.totalAmount).toLocaleString('es-CO')}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <span style={{ 
-                                                            padding: '0.35rem 0.75rem', 
-                                                            borderRadius: '1rem', 
-                                                            background: bg, 
-                                                            color: color, 
-                                                            fontSize: '0.75rem', 
-                                                            fontWeight: '700' 
-                                                        }}>
-                                                            {label}
+                        )}
+
+                        {/* Order History Section (Visible to everyone) */}
+                        <div style={{ 
+                            background: 'var(--surface-lowest)', 
+                            padding: '2.5rem', 
+                            borderRadius: 'var(--radius-lg)'
+                        }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <FaHistory color="var(--primary)" /> Mis Pedidos
+                            </h3>
+                            
+                            {isLoadingOrders ? (
+                                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>
+                                    Cargando pedidos...
+                                </div>
+                            ) : orders.length === 0 ? (
+                                <div style={{ padding: '3rem 2rem', textAlign: 'center', background: 'var(--surface-low)', borderRadius: 'var(--radius)', color: 'var(--on-surface-variant)' }}>
+                                    <div style={{ marginBottom: '1rem', fontSize: '2rem' }}>📦</div>
+                                    <p>Aún no has realizado ningún pedido.</p>
+                                    <Link href="/" className="btn btn-primary" style={{ marginTop: '1.5rem', display: 'inline-block' }}>
+                                        Explorar Tienda
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {(showAllOrders ? orders : orders.slice(0, 5)).map((order, i) => {
+                                        const { bg, color, label } = getStatusStyles(order.status);
+                                        return (
+                                            <div 
+                                                key={order.id} 
+                                                onClick={() => setSelectedOrder(order)}
+                                                style={{ 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between', 
+                                                    alignItems: 'center', 
+                                                    padding: '1.25rem 1rem', 
+                                                    margin: '0 -1rem',
+                                                    borderRadius: 'var(--radius)',
+                                                    borderBottom: i < (showAllOrders ? orders.length : 5) - 1 ? '1px solid var(--surface-low)' : 'none',
+                                                    cursor: 'pointer',
+                                                    transition: 'background 0.2s ease'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-low)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <div>
+                                                    <div style={{ fontWeight: '700' }}>Orden #GAB-2024-{order.id}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--on-surface-variant)' }}>
+                                                        {new Date(order.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })} • 
+                                                        <span style={{ fontWeight: '600', color: 'var(--on-surface)', marginLeft: '5px' }}>
+                                                            ${Number(order.totalAmount).toLocaleString('es-CO')}
                                                         </span>
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-
-                                    {orders.length > 5 && (
-                                        <button style={{ 
-                                            width: '100%', 
-                                            marginTop: '2rem', 
-                                            padding: '1rem', 
-                                            borderRadius: 'var(--radius)', 
-                                            border: 'none', 
-                                            background: 'var(--surface-high)', 
-                                            color: 'var(--on-surface)',
-                                            fontWeight: '700'
-                                        }}>
-                                            Ver todo el historial ({orders.length})
-                                        </button>
-                                    )}
+                                                </div>
+                                                <span style={{ 
+                                                    padding: '0.35rem 0.75rem', 
+                                                    borderRadius: '1rem', 
+                                                    background: bg, 
+                                                    color: color, 
+                                                    fontSize: '0.75rem', 
+                                                    fontWeight: '700' 
+                                                }}>
+                                                    {label}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            </>
-                        )}
+                            )}
+
+                            {orders.length > 5 && (
+                                <button 
+                                    onClick={() => setShowAllOrders(!showAllOrders)}
+                                    style={{ 
+                                        width: '100%', 
+                                        marginTop: '2rem', 
+                                        padding: '1rem', 
+                                        borderRadius: 'var(--radius)', 
+                                        border: 'none', 
+                                        background: 'var(--surface-high)', 
+                                        color: 'var(--on-surface)',
+                                        fontWeight: '700',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {showAllOrders ? 'Ver menos' : `Ver todo el historial (${orders.length})`}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </main>
@@ -415,7 +428,6 @@ export default function ProfilePage() {
                         <p style={{ color: 'var(--on-surface-variant)', marginBottom: '2rem' }}>Orden #GAB-2024-{selectedOrder.id}</p>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            {/* Status Section */}
                             <div style={{ background: 'var(--surface-low)', padding: '1.5rem', borderRadius: 'var(--radius)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontWeight: '700' }}>Estado del pedido</span>
                                 <span style={{ 
@@ -430,7 +442,6 @@ export default function ProfilePage() {
                                 </span>
                             </div>
 
-                            {/* Products Section */}
                             <div>
                                 <h4 style={{ fontWeight: '700', marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Productos</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -457,7 +468,6 @@ export default function ProfilePage() {
 
                             <div style={{ height: '1px', background: 'var(--surface-low)' }}></div>
 
-                            {/* Shipping Info */}
                             <div>
                                 <h4 style={{ fontWeight: '700', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--on-surface-variant)', textTransform: 'uppercase' }}>Dirección de Envío</h4>
                                 <p style={{ fontSize: '0.95rem' }}>{selectedOrder.shippingAddress}</p>
@@ -465,7 +475,6 @@ export default function ProfilePage() {
 
                             <div style={{ height: '1px', background: 'var(--surface-low)' }}></div>
 
-                            {/* Total Section */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
                                 <span style={{ fontSize: '1.25rem', fontWeight: '800' }}>Total Pagado</span>
                                 <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)' }}>
@@ -473,7 +482,6 @@ export default function ProfilePage() {
                                 </span>
                             </div>
 
-                            {/* Cancel Button */}
                             {selectedOrder.status === 'PENDING' && (
                                 <button 
                                     onClick={() => handleCancelOrder(selectedOrder.id)}
