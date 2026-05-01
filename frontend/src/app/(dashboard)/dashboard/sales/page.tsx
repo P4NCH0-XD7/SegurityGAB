@@ -1,6 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { FaShoppingCart, FaSearch, FaEye, FaEdit, FaCheckCircle, FaTruck, FaTimesCircle, FaClock, FaBox, FaDownload } from "react-icons/fa";
+import {
+    FaSearch, FaEye, FaShoppingBag, FaCheckCircle,
+    FaTruck, FaBoxOpen, FaTimesCircle, FaClock, FaFilter,
+    FaDownload
+} from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -10,121 +14,146 @@ interface SaleDetail {
     quantity: number;
     unitPrice: number;
     subtotal: number;
-    product: {
-        name: string;
-        sku?: string;
-    }
+    product: { id: number; name: string; imageUrl?: string; sku?: string };
 }
 
 interface Sale {
     id: number;
     userId: number;
     totalAmount: number;
-    status: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+    status: "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
     shippingAddress: string;
     createdAt: string;
-    user: {
-        name: string;
-        email: string;
-    };
+    user?: { id: number; name: string; email: string };
     details?: SaleDetail[];
 }
 
-export default function SalesManagementPage() {
-    const [sales, setSales] = useState<Sale[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    
+const STATUS_LABEL: Record<string, string> = {
+    PENDING:   "Pendiente",
+    PAID:      "Pagado",
+    SHIPPED:   "Enviado",
+    DELIVERED: "Entregado",
+    CANCELLED: "Cancelado",
+};
+
+const STATUS_COLOR: Record<string, { bg: string; color: string }> = {
+    PENDING:   { bg: "rgba(245,158,11,0.12)",  color: "#d97706" },
+    PAID:      { bg: "rgba(59,130,246,0.12)",   color: "#2563eb" },
+    SHIPPED:   { bg: "rgba(139,92,246,0.12)",   color: "#7c3aed" },
+    DELIVERED: { bg: "rgba(16,185,129,0.12)",   color: "#059669" },
+    CANCELLED: { bg: "rgba(239,68,68,0.12)",    color: "#dc2626" },
+};
+
+const STATUS_ICON: Record<string, JSX.Element> = {
+    PENDING:   <FaClock size={11} />,
+    PAID:      <FaCheckCircle size={11} />,
+    SHIPPED:   <FaTruck size={11} />,
+    DELIVERED: <FaBoxOpen size={11} />,
+    CANCELLED: <FaTimesCircle size={11} />,
+};
+
+// Flujo de estados válidos
+const NEXT_STATUS: Record<string, { value: string; label: string }[]> = {
+    PENDING:   [{ value: "PAID", label: "Marcar como Pagado" }, { value: "CANCELLED", label: "Cancelar" }],
+    PAID:      [{ value: "SHIPPED", label: "Marcar como Enviado" }, { value: "CANCELLED", label: "Cancelar" }],
+    SHIPPED:   [{ value: "DELIVERED", label: "Marcar como Entregado" }],
+    DELIVERED: [],
+    CANCELLED: [],
+};
+
+const formatPrice = (val: number) =>
+    new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(val);
+
+// Componente principal 
+export default function SalesPage() {
     const { token } = useAuthStore();
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
-    useEffect(() => {
-        fetchSales();
-    }, []);
+    const [sales, setSales] = useState<Sale[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterStatus, setFilterStatus] = useState<string>("ALL");
+    const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [updatingId, setUpdatingId] = useState<number | null>(null);
 
+    // Fetch ventas
     const fetchSales = async () => {
         if (!token) return;
         setLoading(true);
         try {
             const res = await fetch(`${API_URL}/sales`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {
                 const data = await res.json();
                 setSales(data);
             } else {
-                toast.error("Error al cargar pedidos");
+                toast.error("Error al cargar las ventas");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error de conexión");
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchSaleDetails = async (id: number) => {
-        try {
-            const res = await fetch(`${API_URL}/sales/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setSelectedSale(data);
-                setIsModalOpen(true);
-            }
-        } catch (error) {
-            toast.error("Error al cargar detalles del pedido");
-        }
-    };
+    useEffect(() => {
+        fetchSales();
+    }, [token]);
 
-    const handleUpdateStatus = async (id: number, newStatus: string) => {
-        try {
-            const res = await fetch(`${API_URL}/sales/${id}/status`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ status: newStatus })
-            });
+    //  Ver detalle de una venta 
+    const handleViewDetail = async (sale: Sale) => {
+        setSelectedSale(sale);
+        setIsDetailOpen(true);
 
-            if (res.ok) {
-                toast.success(`Pedido actualizado a ${newStatus}`);
-                fetchSales();
-                if (selectedSale?.id === id) {
-                    fetchSaleDetails(id);
+        // Si no tiene detalles cargados, los trae
+        if (!sale.details) {
+            try {
+                const res = await fetch(`${API_URL}/sales/${sale.id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) {
+                    const data: Sale = await res.json();
+                    setSales(prev => prev.map(s => s.id === data.id ? data : s));
+                    setSelectedSale(data);
                 }
-            } else {
-                const err = await res.json();
-                toast.error(err.message || "Error al actualizar");
+            } catch {
+                toast.error("Error al cargar el detalle");
             }
-        } catch (error) {
+        }
+    };
+
+    //  Cambiar estado de la venta 
+    const handleStatusChange = async (saleId: number, newStatus: string) => {
+        if (!token) return;
+        setUpdatingId(saleId);
+        try {
+            const res = await fetch(`${API_URL}/sales/${saleId}/status`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (res.ok) {
+                const updated: Sale = await res.json();
+                setSales(prev => prev.map(s => s.id === updated.id ? updated : s));
+                // Actualizar también el modal si está abierto
+                if (selectedSale?.id === saleId) setSelectedSale(updated);
+                toast.success(`Estado actualizado a "${STATUS_LABEL[newStatus]}"`);
+            } else {
+                const err = await res.json().catch(() => ({}));
+                toast.error(err.message || "Error al actualizar estado");
+            }
+        } catch {
             toast.error("Error de conexión");
+        } finally {
+            setUpdatingId(null);
         }
     };
-
-    const getStatusStyle = (status: string) => {
-        switch(status) {
-            case 'PENDING': return { bg: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', icon: <FaClock /> };
-            case 'PAID': return { bg: 'rgba(16, 185, 129, 0.1)', color: '#10b981', icon: <FaCheckCircle /> };
-            case 'SHIPPED': return { bg: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', icon: <FaTruck /> };
-            case 'DELIVERED': return { bg: 'var(--secondary-container)', color: 'var(--secondary)', icon: <FaBox /> };
-            case 'CANCELLED': return { bg: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', icon: <FaTimesCircle /> };
-            default: return { bg: 'var(--surface-high)', color: 'var(--on-surface-variant)', icon: null };
-        }
-    };
-
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(price);
-    };
-
-    const filteredSales = sales.filter(s => 
-        s.user?.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        s.id.toString().includes(searchTerm) ||
-        s.status.toLowerCase().includes(searchTerm.toLowerCase())
-    );
 
     const exportToCSV = () => {
         if (sales.length === 0) return;
@@ -153,231 +182,405 @@ export default function SalesManagementPage() {
         document.body.removeChild(link);
     };
 
+    //  Filtros y búsqueda 
+    const filtered = sales.filter(s => {
+        const matchSearch =
+            String(s.id).includes(searchTerm) ||
+            s.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.shippingAddress?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchStatus = filterStatus === "ALL" || s.status === filterStatus;
+        return matchSearch && matchStatus;
+    });
+
+    //  Resumen de estados 
+    const counts = Object.keys(STATUS_LABEL).reduce((acc, k) => {
+        acc[k] = sales.filter(s => s.status === k).length;
+        return acc;
+    }, {} as Record<string, number>);
+
     return (
         <div className="dashboard-content">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem" }}>
                 <div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--on-surface)', letterSpacing: '-0.02em' }}>Gestión de Pedidos</h2>
-                    <p style={{ color: 'var(--on-surface-variant)' }}>Administra las ventas y estados de entrega</p>
+                    <h2 style={{ fontSize: "1.75rem", fontWeight: "800", color: "var(--on-surface)", letterSpacing: "-0.02em" }}>
+                        Gestión de Pedidos
+                    </h2>
+                    <p style={{ color: "var(--on-surface-variant)" }}>
+                        Monitorea y actualiza el estado de todas las ventas
+                    </p>
                 </div>
-                <button 
-                    onClick={exportToCSV}
-                    style={{ padding: '0.75rem 1.5rem', borderRadius: '0.75rem', background: 'var(--surface-high)', color: 'var(--on-surface)', border: 'none', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
-                >
-                    <FaDownload /> Exportar CSV
-                </button>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button 
+                        onClick={exportToCSV}
+                        style={{ padding: '0.75rem 1.5rem', borderRadius: '0.75rem', background: 'var(--surface-high)', color: 'var(--on-surface)', border: 'none', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+                    >
+                        <FaDownload /> Exportar CSV
+                    </button>
+                    <div style={{
+                        background: "var(--surface-low)", padding: "0.75rem 1.25rem",
+                        borderRadius: "0.75rem", display: "flex", alignItems: "center",
+                        gap: "0.5rem", fontWeight: "700", color: "var(--on-surface)"
+                    }}>
+                        <FaShoppingBag style={{ color: "var(--primary)" }} />
+                        {sales.length} ventas en total
+                    </div>
+                </div>
             </div>
 
-            {/* Filters */}
-            <div style={{ 
-                background: 'var(--surface-low)', 
-                padding: '1rem', 
-                borderRadius: '1rem', 
-                marginBottom: '2rem'
+            {/* ── Cards resumen ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
+                {Object.entries(STATUS_LABEL).map(([key, label]) => (
+                    <button
+                        key={key}
+                        onClick={() => setFilterStatus(filterStatus === key ? "ALL" : key)}
+                        style={{
+                            background: filterStatus === key ? STATUS_COLOR[key].bg : "var(--surface-low)",
+                            border: filterStatus === key
+                                ? `2px solid ${STATUS_COLOR[key].color}`
+                                : "2px solid transparent",
+                            borderRadius: "1rem", padding: "1rem",
+                            cursor: "pointer", textAlign: "left", transition: "all 0.2s",
+                        }}
+                    >
+                        <div style={{ fontSize: "1.75rem", fontWeight: "800", color: STATUS_COLOR[key].color }}>
+                            {counts[key] || 0}
+                        </div>
+                        <div style={{ fontSize: "0.75rem", fontWeight: "700", color: "var(--on-surface-variant)", display: "flex", alignItems: "center", gap: "0.3rem", marginTop: "0.25rem" }}>
+                            {STATUS_ICON[key]} {label}
+                        </div>
+                    </button>
+                ))}
+            </div>
+
+            {/* ── Barra de búsqueda y filtro ── */}
+            <div style={{
+                background: "var(--surface-low)", padding: "1rem",
+                borderRadius: "1rem", display: "flex", gap: "1rem",
+                marginBottom: "2rem", alignItems: "center"
             }}>
-                <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
-                    <FaSearch style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--on-surface-variant)' }} />
-                    <input 
-                        type="text" 
-                        placeholder="Buscar por ID, cliente o estado..." 
+                <div style={{ position: "relative", flex: 1 }}>
+                    <FaSearch style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "var(--on-surface-variant)" }} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por ID, cliente o dirección..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ 
-                            width: '100%', 
-                            padding: '0.75rem 1rem 0.75rem 3rem', 
-                            background: 'var(--surface)', 
-                            border: '1px solid var(--surface-high)', 
-                            borderRadius: '0.75rem',
-                            color: 'var(--on-surface)',
-                            outline: 'none'
+                        onChange={e => setSearchTerm(e.target.value)}
+                        style={{
+                            width: "100%", padding: "0.75rem 1rem 0.75rem 3rem",
+                            background: "var(--surface)", border: "1px solid var(--surface-high)",
+                            borderRadius: "0.75rem", color: "var(--on-surface)", outline: "none"
                         }}
                     />
                 </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--on-surface-variant)", fontSize: "0.85rem" }}>
+                    <FaFilter size={12} />
+                    <select
+                        value={filterStatus}
+                        onChange={e => setFilterStatus(e.target.value)}
+                        style={{
+                            padding: "0.75rem 1rem", background: "var(--surface)",
+                            border: "1px solid var(--surface-high)", borderRadius: "0.75rem",
+                            color: "var(--on-surface)", outline: "none", fontWeight: "600"
+                        }}
+                    >
+                        <option value="ALL">Todos los estados</option>
+                        {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                            <option key={k} value={k}>{v}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
-            {/* Table */}
-            <div className="stat-card" style={{ padding: 0, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            {/* ── Tabla de ventas ── */}
+            <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                        <tr style={{ background: 'var(--surface-low)', color: 'var(--on-surface-variant)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>
-                            <th style={{ padding: '1.25rem', textAlign: 'left' }}>ID</th>
-                            <th style={{ padding: '1.25rem', textAlign: 'left' }}>Cliente</th>
-                            <th style={{ padding: '1.25rem', textAlign: 'left' }}>Fecha</th>
-                            <th style={{ padding: '1.25rem', textAlign: 'left' }}>Total</th>
-                            <th style={{ padding: '1.25rem', textAlign: 'left' }}>Estado</th>
-                            <th style={{ padding: '1.25rem', textAlign: 'center' }}>Acciones</th>
+                        <tr style={{
+                            background: "var(--surface-low)", color: "var(--on-surface-variant)",
+                            fontSize: "0.75rem", fontWeight: "700", textTransform: "uppercase"
+                        }}>
+                            <th style={{ padding: "1.25rem", textAlign: "left" }}>Pedido</th>
+                            <th style={{ padding: "1.25rem", textAlign: "left" }}>Cliente</th>
+                            <th style={{ padding: "1.25rem", textAlign: "left" }}>Fecha</th>
+                            <th style={{ padding: "1.25rem", textAlign: "left" }}>Total</th>
+                            <th style={{ padding: "1.25rem", textAlign: "left" }}>Estado</th>
+                            <th style={{ padding: "1.25rem", textAlign: "left" }}>Cambiar estado</th>
+                            <th style={{ padding: "1.25rem", textAlign: "center" }}>Detalle</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>Cargando pedidos...</td></tr>
-                        ) : filteredSales.length === 0 ? (
-                            <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>No se encontraron pedidos</td></tr>
-                        ) : filteredSales.map((sale) => {
-                            const style = getStatusStyle(sale.status);
-                            return (
-                                <tr key={sale.id} style={{ borderBottom: '1px solid var(--surface-high)' }}>
-                                    <td style={{ padding: '1.25rem', fontWeight: '700', color: 'var(--on-surface)' }}>#{sale.id}</td>
-                                    <td style={{ padding: '1.25rem' }}>
-                                        <div style={{ fontWeight: '700', color: 'var(--on-surface)' }}>{sale.user?.name}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>{sale.user?.email}</div>
-                                    </td>
-                                    <td style={{ padding: '1.25rem', color: 'var(--on-surface-variant)', fontSize: '0.85rem' }}>
-                                        {new Date(sale.createdAt).toLocaleString()}
-                                    </td>
-                                    <td style={{ padding: '1.25rem', fontWeight: '800', color: 'var(--primary)' }}>
-                                        {formatPrice(sale.totalAmount)}
-                                    </td>
-                                    <td style={{ padding: '1.25rem' }}>
-                                        <span style={{ 
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            padding: '0.35rem 0.75rem', 
-                                            borderRadius: '2rem', 
-                                            fontSize: '0.75rem', 
-                                            fontWeight: '700',
-                                            background: style.bg,
-                                            color: style.color
-                                        }}>
-                                            {style.icon} {sale.status}
-                                        </span>
-                                    </td>
-                                    <td style={{ padding: '1.25rem', textAlign: 'center' }}>
-                                        <button 
-                                            onClick={() => fetchSaleDetails(sale.id)}
-                                            style={{ background: 'var(--surface-high)', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', color: 'var(--on-surface)', fontWeight: '600', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                            <tr>
+                                <td colSpan={7} style={{ padding: "3rem", textAlign: "center", color: "var(--on-surface-variant)" }}>
+                                    Cargando pedidos...
+                                </td>
+                            </tr>
+                        ) : filtered.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} style={{ padding: "3rem", textAlign: "center", color: "var(--on-surface-variant)" }}>
+                                    No se encontraron pedidos
+                                </td>
+                            </tr>
+                        ) : filtered.map(sale => (
+                            <tr key={sale.id} style={{ borderBottom: "1px solid var(--surface-high)" }}>
+
+                                {/* ID */}
+                                <td style={{ padding: "1.25rem" }}>
+                                    <div style={{ fontWeight: "800", color: "var(--primary)", fontSize: "1rem" }}>
+                                        #{sale.id}
+                                    </div>
+                                </td>
+
+                                {/* Cliente */}
+                                <td style={{ padding: "1.25rem" }}>
+                                    <div style={{ fontWeight: "700", color: "var(--on-surface)" }}>
+                                        {sale.user?.name || `Usuario #${sale.userId}`}
+                                    </div>
+                                    <div style={{ fontSize: "0.75rem", color: "var(--on-surface-variant)" }}>
+                                        {sale.user?.email || ""}
+                                    </div>
+                                </td>
+
+                                {/* Fecha */}
+                                <td style={{ padding: "1.25rem", color: "var(--on-surface-variant)", fontSize: "0.85rem" }}>
+                                    {new Date(sale.createdAt).toLocaleDateString("es-CO", {
+                                        year: "numeric", month: "short", day: "numeric"
+                                    })}
+                                    <div style={{ fontSize: "0.72rem" }}>
+                                        {new Date(sale.createdAt).toLocaleTimeString("es-CO", {
+                                            hour: "2-digit", minute: "2-digit"
+                                        })}
+                                    </div>
+                                </td>
+
+                                {/* Total */}
+                                <td style={{ padding: "1.25rem", fontWeight: "800", color: "var(--on-surface)", fontSize: "1rem" }}>
+                                    {formatPrice(Number(sale.totalAmount))}
+                                </td>
+
+                                {/* Badge estado */}
+                                <td style={{ padding: "1.25rem" }}>
+                                    <span style={{
+                                        display: "inline-flex", alignItems: "center", gap: "0.3rem",
+                                        padding: "0.35rem 0.75rem", borderRadius: "2rem",
+                                        fontSize: "0.75rem", fontWeight: "700",
+                                        background: STATUS_COLOR[sale.status].bg,
+                                        color: STATUS_COLOR[sale.status].color,
+                                    }}>
+                                        {STATUS_ICON[sale.status]}
+                                        {STATUS_LABEL[sale.status]}
+                                    </span>
+                                </td>
+
+                                {/* Selector cambio de estado */}
+                                <td style={{ padding: "1.25rem" }}>
+                                    {NEXT_STATUS[sale.status].length > 0 ? (
+                                        <select
+                                            disabled={updatingId === sale.id}
+                                            defaultValue=""
+                                            onChange={e => {
+                                                if (e.target.value) handleStatusChange(sale.id, e.target.value);
+                                                e.target.value = "";
+                                            }}
+                                            style={{
+                                                padding: "0.5rem 0.75rem",
+                                                background: "var(--surface-low)",
+                                                border: "1px solid var(--surface-high)",
+                                                borderRadius: "0.5rem",
+                                                color: "var(--on-surface)",
+                                                fontSize: "0.8rem",
+                                                fontWeight: "600",
+                                                cursor: "pointer",
+                                                outline: "none",
+                                                opacity: updatingId === sale.id ? 0.5 : 1,
+                                            }}
                                         >
-                                            <FaEye /> Detalles
-                                        </button>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                                            <option value="" disabled>
+                                                {updatingId === sale.id ? "Actualizando..." : "Cambiar a..."}
+                                            </option>
+                                            {NEXT_STATUS[sale.status].map(opt => (
+                                                <option key={opt.value} value={opt.value}>
+                                                    {opt.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <span style={{ fontSize: "0.8rem", color: "var(--on-surface-variant)" }}>
+                                            —
+                                        </span>
+                                    )}
+                                </td>
+
+                                {/* Ver detalle */}
+                                <td style={{ padding: "1.25rem", textAlign: "center" }}>
+                                    <button
+                                        onClick={() => handleViewDetail(sale)}
+                                        style={{
+                                            background: "var(--surface-high)", border: "none",
+                                            padding: "0.5rem 0.75rem", borderRadius: "0.5rem",
+                                            cursor: "pointer", color: "var(--primary)",
+                                            display: "inline-flex", alignItems: "center", gap: "0.35rem",
+                                            fontSize: "0.8rem", fontWeight: "700",
+                                        }}
+                                    >
+                                        <FaEye size={12} /> Ver
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
 
-            {/* Details Modal */}
-            {isModalOpen && selectedSale && (
-                <div style={{ 
-                    position: 'fixed', 
-                    top: 0, 
-                    left: 0, 
-                    right: 0, 
-                    bottom: 0, 
-                    background: 'rgba(0,0,0,0.5)', 
-                    backdropFilter: 'blur(8px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    padding: '1rem'
+            {/* ── Modal detalle de venta ── */}
+            {isDetailOpen && selectedSale && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                    background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    zIndex: 1000, padding: "1rem"
                 }}>
-                    <div style={{ 
-                        background: 'var(--surface)', 
-                        padding: '2.5rem', 
-                        borderRadius: '1.5rem', 
-                        width: '100%',
-                        maxWidth: '800px', 
-                        maxHeight: '90vh',
-                        overflowY: 'auto',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                        border: '1px solid var(--surface-high)'
+                    <div style={{
+                        background: "var(--surface)", padding: "2.5rem",
+                        borderRadius: "1.5rem", width: "100%", maxWidth: "600px",
+                        boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+                        border: "1px solid var(--surface-high)",
+                        maxHeight: "90vh", overflowY: "auto"
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+
+                        {/* Header modal */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem" }}>
                             <div>
-                                <h3 style={{ fontWeight: '800', fontSize: '1.5rem', color: 'var(--on-surface)' }}>
-                                    Detalle del Pedido #{selectedSale.id}
+                                <h3 style={{ fontSize: "1.5rem", fontWeight: "800", color: "var(--on-surface)" }}>
+                                    Pedido #{selectedSale.id}
                                 </h3>
-                                <p style={{ color: 'var(--on-surface-variant)' }}>Realizado el {new Date(selectedSale.createdAt).toLocaleString()}</p>
+                                <p style={{ color: "var(--on-surface-variant)", fontSize: "0.85rem", marginTop: "0.25rem" }}>
+                                    {new Date(selectedSale.createdAt).toLocaleDateString("es-CO", {
+                                        weekday: "long", year: "numeric", month: "long", day: "numeric"
+                                    })}
+                                </p>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+                            <span style={{
+                                display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                                padding: "0.4rem 0.9rem", borderRadius: "2rem",
+                                fontSize: "0.8rem", fontWeight: "700",
+                                background: STATUS_COLOR[selectedSale.status].bg,
+                                color: STATUS_COLOR[selectedSale.status].color,
+                            }}>
+                                {STATUS_ICON[selectedSale.status]}
+                                {STATUS_LABEL[selectedSale.status]}
+                            </span>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
-                            <div style={{ background: 'var(--surface-low)', padding: '1.5rem', borderRadius: '1rem' }}>
-                                <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--on-surface-variant)', textTransform: 'uppercase', marginBottom: '1rem' }}>Información del Cliente</h4>
-                                <div style={{ fontWeight: '700', color: 'var(--on-surface)' }}>{selectedSale.user?.name}</div>
-                                <div style={{ color: 'var(--on-surface-variant)', marginBottom: '1rem' }}>{selectedSale.user?.email}</div>
-                                <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--on-surface-variant)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Dirección de Envío</h4>
-                                <div style={{ color: 'var(--on-surface)', fontSize: '0.9rem' }}>{selectedSale.shippingAddress}</div>
+                        {/* Info cliente */}
+                        <div style={{
+                            background: "var(--surface-low)", borderRadius: "1rem",
+                            padding: "1.25rem", marginBottom: "1.5rem"
+                        }}>
+                            <div style={{ fontSize: "0.72rem", fontWeight: "700", color: "var(--on-surface-variant)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
+                                Información del cliente
                             </div>
-                            <div style={{ background: 'var(--surface-low)', padding: '1.5rem', borderRadius: '1rem' }}>
-                                <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--on-surface-variant)', textTransform: 'uppercase', marginBottom: '1rem' }}>Estado del Pedido</h4>
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <span style={{ 
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        padding: '0.5rem 1rem', 
-                                        borderRadius: '2rem', 
-                                        fontSize: '0.85rem', 
-                                        fontWeight: '800',
-                                        background: getStatusStyle(selectedSale.status).bg,
-                                        color: getStatusStyle(selectedSale.status).color
-                                    }}>
-                                        {getStatusStyle(selectedSale.status).icon} {selectedSale.status}
-                                    </span>
+                            <div style={{ fontWeight: "700", color: "var(--on-surface)" }}>
+                                {selectedSale.user?.name || `Usuario #${selectedSale.userId}`}
+                            </div>
+                            {selectedSale.user?.email && (
+                                <div style={{ fontSize: "0.85rem", color: "var(--on-surface-variant)", marginTop: "0.25rem" }}>
+                                    {selectedSale.user.email}
                                 </div>
-                                <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--on-surface-variant)', textTransform: 'uppercase', marginBottom: '1rem' }}>Acciones de Estado</h4>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                    {['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(st => (
-                                        <button 
-                                            key={st}
-                                            onClick={() => handleUpdateStatus(selectedSale.id, st)}
-                                            disabled={selectedSale.status === st}
-                                            style={{ 
-                                                padding: '0.4rem 0.8rem', 
-                                                borderRadius: '0.5rem', 
-                                                border: '1px solid var(--surface-high)',
-                                                background: selectedSale.status === st ? 'var(--surface-high)' : 'var(--surface)',
-                                                color: selectedSale.status === st ? 'var(--on-surface-variant)' : 'var(--on-surface)',
-                                                fontSize: '0.7rem',
-                                                fontWeight: '700',
-                                                cursor: selectedSale.status === st ? 'default' : 'pointer',
-                                                transition: 'all 0.2s'
-                                            }}
-                                        >
-                                            {st}
-                                        </button>
-                                    ))}
-                                </div>
+                            )}
+                            <div style={{ fontSize: "0.85rem", color: "var(--on-surface-variant)", marginTop: "0.5rem", display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
+                                <span style={{ color: "var(--primary)", flexShrink: 0 }}>📍</span>
+                                {selectedSale.shippingAddress}
                             </div>
                         </div>
 
-                        <h4 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--on-surface)', marginBottom: '1rem' }}>Productos en este pedido</h4>
-                        <div style={{ border: '1px solid var(--surface-high)', borderRadius: '1rem', overflow: 'hidden' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead style={{ background: 'var(--surface-low)' }}>
-                                    <tr>
-                                        <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>Producto</th>
-                                        <th style={{ padding: '1rem', textAlign: 'right', fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>P. Unitario</th>
-                                        <th style={{ padding: '1rem', textAlign: 'center', fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>Cant.</th>
-                                        <th style={{ padding: '1rem', textAlign: 'right', fontSize: '0.75rem', color: 'var(--on-surface-variant)' }}>Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedSale.details?.map((detail) => (
-                                        <tr key={detail.id} style={{ borderTop: '1px solid var(--surface-high)' }}>
-                                            <td style={{ padding: '1rem' }}>
-                                                <div style={{ fontWeight: '700', color: 'var(--on-surface)' }}>{detail.product?.name}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>SKU: {detail.product?.sku || 'N/A'}</div>
-                                            </td>
-                                            <td style={{ padding: '1rem', textAlign: 'right', color: 'var(--on-surface-variant)' }}>{formatPrice(detail.unitPrice)}</td>
-                                            <td style={{ padding: '1rem', textAlign: 'center', fontWeight: '700' }}>{detail.quantity}</td>
-                                            <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '800', color: 'var(--on-surface)' }}>{formatPrice(detail.subtotal)}</td>
-                                        </tr>
+                        {/* Productos */}
+                        <div style={{ marginBottom: "1.5rem" }}>
+                            <div style={{ fontSize: "0.72rem", fontWeight: "700", color: "var(--on-surface-variant)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>
+                                Productos del pedido
+                            </div>
+                            {selectedSale.details ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                    {selectedSale.details.map(detail => (
+                                        <div key={detail.id} style={{
+                                            display: "flex", alignItems: "center",
+                                            justifyContent: "space-between",
+                                            background: "var(--surface-low)",
+                                            borderRadius: "0.75rem", padding: "1rem"
+                                        }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: "700", color: "var(--on-surface)", fontSize: "0.9rem" }}>
+                                                    {detail.product?.name || `Producto #${detail.productId}`}
+                                                </div>
+                                                <div style={{ fontSize: "0.78rem", color: "var(--on-surface-variant)", marginTop: "0.2rem" }}>
+                                                    {detail.quantity} × {formatPrice(Number(detail.unitPrice))}
+                                                </div>
+                                            </div>
+                                            <div style={{ fontWeight: "800", color: "var(--primary)", fontSize: "1rem" }}>
+                                                {formatPrice(Number(detail.subtotal))}
+                                            </div>
+                                        </div>
                                     ))}
-                                </tbody>
-                                <tfoot style={{ background: 'var(--surface-low)' }}>
-                                    <tr>
-                                        <td colSpan={3} style={{ padding: '1.25rem', textAlign: 'right', fontWeight: '800', fontSize: '1.1rem' }}>Total</td>
-                                        <td style={{ padding: '1.25rem', textAlign: 'right', fontWeight: '800', fontSize: '1.1rem', color: 'var(--primary)' }}>{formatPrice(selectedSale.totalAmount)}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: "center", color: "var(--on-surface-variant)", padding: "1rem", fontSize: "0.85rem" }}>
+                                    Cargando productos...
+                                </div>
+                            )}
                         </div>
+
+                        {/* Total */}
+                        <div style={{
+                            display: "flex", justifyContent: "space-between", alignItems: "center",
+                            borderTop: "1px solid var(--surface-high)", paddingTop: "1.25rem",
+                            marginBottom: "1.5rem"
+                        }}>
+                            <span style={{ fontWeight: "700", color: "var(--on-surface-variant)" }}>Total del pedido</span>
+                            <span style={{ fontSize: "1.5rem", fontWeight: "800", color: "var(--on-surface)" }}>
+                                {formatPrice(Number(selectedSale.totalAmount))}
+                            </span>
+                        </div>
+
+                        {/* Cambiar estado desde el modal */}
+                        {NEXT_STATUS[selectedSale.status].length > 0 && (
+                            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
+                                {NEXT_STATUS[selectedSale.status].map(opt => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => handleStatusChange(selectedSale.id, opt.value)}
+                                        disabled={updatingId === selectedSale.id}
+                                        style={{
+                                            flex: 1, padding: "0.85rem",
+                                            background: opt.value === "CANCELLED"
+                                                ? "rgba(239,68,68,0.1)" : "var(--primary)",
+                                            color: opt.value === "CANCELLED" ? "#dc2626" : "white",
+                                            border: opt.value === "CANCELLED"
+                                                ? "1px solid rgba(239,68,68,0.3)" : "none",
+                                            borderRadius: "0.75rem", fontWeight: "700",
+                                            cursor: "pointer", fontSize: "0.9rem",
+                                            opacity: updatingId === selectedSale.id ? 0.6 : 1,
+                                        }}
+                                    >
+                                        {updatingId === selectedSale.id ? "Actualizando..." : opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Cerrar modal */}
+                        <button
+                            onClick={() => { setIsDetailOpen(false); setSelectedSale(null); }}
+                            style={{
+                                width: "100%", padding: "1rem",
+                                border: "1px solid var(--surface-high)",
+                                borderRadius: "0.75rem", background: "none",
+                                color: "var(--on-surface)", fontWeight: "700", cursor: "pointer"
+                            }}
+                        >
+                            Cerrar
+                        </button>
                     </div>
                 </div>
             )}

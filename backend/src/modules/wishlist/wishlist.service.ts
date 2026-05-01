@@ -64,7 +64,7 @@ export class WishlistsService {
     });
 
     if (!result) {
-      throw new NotFoundException('No se pudo recuperar el elemento guardado.');
+      throw new NotFoundException('No se pudo recuperar el favorito recién creado.');
     }
 
     return result;

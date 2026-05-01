@@ -1,13 +1,24 @@
 "use client";
 import { useState, useEffect } from "react";
-import { FaChartLine, FaChartBar, FaCalendarAlt, FaDownload, FaArrowUp, FaBoxOpen, FaExclamationTriangle, FaShoppingCart } from "react-icons/fa";
+import {
+    FaChartLine, FaBoxOpen, FaExclamationTriangle,
+    FaArrowUp, FaArrowDown, FaWrench, FaTrophy,
+    FaChartBar, FaSyncAlt
+} from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { useAuthStore } from "@/store/useAuthStore";
 
+//  Tipos
 interface SalesSummary {
     totalOrders: number;
     totalRevenue: number;
     averageOrder: number;
+}
+
+interface SalesByStatus {
+    status: string;
+    count: number;
+    total: number;
 }
 
 interface TopProduct {
@@ -17,7 +28,7 @@ interface TopProduct {
     totalRevenue: number;
 }
 
-interface MonthSales {
+interface SalesByMonth {
     month: string;
     count: number;
     total: number;
@@ -25,264 +36,492 @@ interface MonthSales {
 
 interface SalesReport {
     summary: SalesSummary;
-    byStatus: { status: string; count: number; total: number }[];
+    byStatus: SalesByStatus[];
     topProducts: TopProduct[];
-    byMonth: MonthSales[];
+    byMonth: SalesByMonth[];
+}
+
+interface StockAlertItem {
+    id: number;
+    name: string;
+    sku: string | null;
+    stock: number;
+    category: string | null;
+}
+
+interface MovementSummary {
+    type: string;
+    count: number;
+    totalQuantity: number;
 }
 
 interface InventoryReport {
     summary: { outOfStockCount: number; lowStockCount: number };
-    outOfStockProducts: any[];
-    lowStockProducts: any[];
-    movementsSummary: { type: string; count: number; totalQuantity: number }[];
+    outOfStockProducts: StockAlertItem[];
+    lowStockProducts: StockAlertItem[];
+    movementsSummary: MovementSummary[];
 }
 
-export default function ReportsPage() {
-    const [activeTab, setActiveTab] = useState<'sales' | 'inventory'>('sales');
-    const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
-    const [inventoryReport, setInventoryReport] = useState<InventoryReport | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [period, setPeriod] = useState('MONTH');
+//  Helpers
+const formatPrice = (val: number) =>
+    new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(val);
 
+const STATUS_LABEL: Record<string, string> = {
+    PENDING: "Pendiente", PAID: "Pagado", SHIPPED: "Enviado",
+    DELIVERED: "Entregado", CANCELLED: "Cancelado",
+};
+
+const STATUS_COLOR: Record<string, { bg: string; color: string }> = {
+    PENDING:   { bg: "rgba(245,158,11,0.12)",  color: "#d97706" },
+    PAID:      { bg: "rgba(59,130,246,0.12)",   color: "#2563eb" },
+    SHIPPED:   { bg: "rgba(139,92,246,0.12)",   color: "#7c3aed" },
+    DELIVERED: { bg: "rgba(16,185,129,0.12)",   color: "#059669" },
+    CANCELLED: { bg: "rgba(239,68,68,0.12)",    color: "#dc2626" },
+};
+
+const PERIOD_OPTIONS = [
+    { value: "month",   label: "Este mes" },
+    { value: "week",    label: "Esta semana" },
+    { value: "quarter", label: "Este trimestre" },
+    { value: "year",    label: "Este año" },
+];
+
+const MOV_TYPE_CONFIG: Record<string, { color: string; label: string; icon: JSX.Element }> = {
+    IN:         { color: "#059669", label: "Entradas",  icon: <FaArrowUp size={12} /> },
+    OUT:        { color: "#dc2626", label: "Salidas",   icon: <FaArrowDown size={12} /> },
+    ADJUSTMENT: { color: "#d97706", label: "Ajustes",   icon: <FaWrench size={12} /> },
+};
+
+//  Componente principal
+export default function ReportsPage() {
     const { token } = useAuthStore();
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
-    useEffect(() => {
-        if (activeTab === 'sales') {
-            fetchSalesReport();
-        } else {
-            fetchInventoryReport();
-        }
-    }, [activeTab, period]);
+    const [salesReport, setSalesReport]       = useState<SalesReport | null>(null);
+    const [inventoryReport, setInventoryReport] = useState<InventoryReport | null>(null);
+    const [loadingSales, setLoadingSales]       = useState(true);
+    const [loadingInventory, setLoadingInventory] = useState(true);
+    const [period, setPeriod]                   = useState("month");
+    const [activeTab, setActiveTab]             = useState<"sales" | "inventory">("sales");
 
-    const fetchSalesReport = async () => {
+    //  Fetch reporte de ventas 
+    const fetchSalesReport = async (p: string) => {
         if (!token) return;
-        setLoading(true);
+        setLoadingSales(true);
         try {
-            const res = await fetch(`${API_URL}/reports/sales?period=${period}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const res = await fetch(`${API_URL}/reports/sales?period=${p}`, {
+                headers: { Authorization: `Bearer ${token}` },
             });
-            if (res.ok) {
-                const data = await res.json();
-                setSalesReport(data);
-            }
-        } catch (error) {
-            toast.error("Error al cargar reporte de ventas");
+            if (res.ok) setSalesReport(await res.json());
+            else toast.error("Error al cargar reporte de ventas");
+        } catch {
+            toast.error("Error de conexión");
         } finally {
-            setLoading(false);
+            setLoadingSales(false);
         }
     };
 
+    //  Fetch reporte de inventario 
     const fetchInventoryReport = async () => {
         if (!token) return;
-        setLoading(true);
+        setLoadingInventory(true);
         try {
             const res = await fetch(`${API_URL}/reports/inventory`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
-            if (res.ok) {
-                const data = await res.json();
-                setInventoryReport(data);
-            }
-        } catch (error) {
-            toast.error("Error al cargar reporte de inventario");
+            if (res.ok) setInventoryReport(await res.json());
+            else toast.error("Error al cargar reporte de inventario");
+        } catch {
+            toast.error("Error de conexión");
         } finally {
-            setLoading(false);
+            setLoadingInventory(false);
         }
     };
 
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(price);
+    useEffect(() => {
+        fetchSalesReport(period);
+        fetchInventoryReport();
+    }, [token]);
+
+    const handlePeriodChange = (p: string) => {
+        setPeriod(p);
+        fetchSalesReport(p);
     };
 
-    const getMonthName = (monthStr: string) => {
-        const [year, month] = monthStr.split('-');
-        const date = new Date(parseInt(year), parseInt(month) - 1);
-        return date.toLocaleString('es-ES', { month: 'short', year: '2-digit' });
+    //  Gráfica de barras SVG (ventas por mes) 
+    const renderBarChart = () => {
+        if (!salesReport?.byMonth?.length) return (
+            <div style={{ textAlign: "center", padding: "3rem", color: "var(--on-surface-variant)", fontSize: "0.9rem" }}>
+                Sin datos para el período seleccionado
+            </div>
+        );
+
+        const data   = salesReport.byMonth;
+        const maxVal = Math.max(...data.map(d => d.total), 1);
+        
+        return (
+            <div style={{ position: "relative", height: "200px", display: "flex", alignItems: "flex-end", gap: "0.5rem", padding: "0 0.5rem" }}>
+                {data.map((d, i) => {
+                    const pct = (d.total / maxVal) * 100;
+                    return (
+                        <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", height: "100%", justifyContent: "flex-end" }}>
+                            <div style={{ fontSize: "0.65rem", color: "var(--on-surface-variant)", fontWeight: "600" }}>
+                                {formatPrice(d.total).replace("$", "").replace(",00", "")}
+                            </div>
+                            <div
+                                style={{
+                                    width: "100%", background: "var(--primary)",
+                                    height: `${Math.max(pct, 4)}%`,
+                                    borderRadius: "0.5rem 0.5rem 0 0",
+                                    opacity: 0.85, transition: "height 0.4s ease",
+                                    minHeight: "4px",
+                                }}
+                                title={`${d.month}: ${formatPrice(d.total)} (${d.count} ventas)`}
+                            />
+                            <div style={{ fontSize: "0.65rem", color: "var(--on-surface-variant)", fontWeight: "600", whiteSpace: "nowrap" }}>
+                                {d.month.substring(5)}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
     };
 
     return (
         <div className="dashboard-content">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+
+            {/* ── Header ── */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem", flexWrap: "wrap", gap: "1rem" }}>
                 <div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: '800', color: 'var(--on-surface)', letterSpacing: '-0.02em' }}>Reportes y Analítica</h2>
-                    <p style={{ color: 'var(--on-surface-variant)' }}>Visualiza el rendimiento de tu negocio</p>
+                    <h2 style={{ fontSize: "1.75rem", fontWeight: "800", color: "var(--on-surface)", letterSpacing: "-0.02em" }}>
+                        Reportes y Analíticas
+                    </h2>
+                    <p style={{ color: "var(--on-surface-variant)" }}>
+                        Métricas de ventas e inventario en tiempo real
+                    </p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <select 
-                        value={period}
-                        onChange={(e) => setPeriod(e.target.value)}
-                        style={{ padding: '0.75rem', borderRadius: '0.75rem', background: 'var(--surface-low)', border: '1px solid var(--surface-high)', color: 'var(--on-surface)', fontWeight: '700' }}
+                <button
+                    onClick={() => { fetchSalesReport(period); fetchInventoryReport(); }}
+                    style={{
+                        background: "var(--surface-low)", border: "none",
+                        padding: "0.75rem 1.25rem", borderRadius: "0.75rem",
+                        color: "var(--on-surface)", fontWeight: "700", cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: "0.5rem",
+                    }}
+                >
+                    <FaSyncAlt size={13} /> Actualizar
+                </button>
+            </div>
+
+            {/*  Tabs  */}
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem", background: "var(--surface-low)", padding: "0.4rem", borderRadius: "1rem", width: "fit-content" }}>
+                {[
+                    { key: "sales",     label: "Ventas",     icon: <FaChartLine size={13} /> },
+                    { key: "inventory", label: "Inventario", icon: <FaBoxOpen size={13} /> },
+                ].map(tab => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setActiveTab(tab.key as any)}
+                        style={{
+                            padding: "0.6rem 1.5rem", borderRadius: "0.75rem", border: "none",
+                            fontWeight: "700", cursor: "pointer", fontSize: "0.9rem",
+                            display: "flex", alignItems: "center", gap: "0.5rem",
+                            background: activeTab === tab.key ? "var(--surface)" : "transparent",
+                            color: activeTab === tab.key ? "var(--primary)" : "var(--on-surface-variant)",
+                            boxShadow: activeTab === tab.key ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
+                            transition: "all 0.2s",
+                        }}
                     >
-                        <option value="TODAY">Hoy</option>
-                        <option value="WEEK">Última Semana</option>
-                        <option value="MONTH">Último Mes</option>
-                        <option value="YEAR">Último Año</option>
-                    </select>
-                    <button style={{ padding: '0.75rem 1.5rem', borderRadius: '0.75rem', background: 'var(--surface-high)', color: 'var(--on-surface)', border: 'none', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                        <FaDownload /> Exportar PDF
+                        {tab.icon} {tab.label}
                     </button>
-                </div>
+                ))}
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2.5rem', borderBottom: '1px solid var(--surface-high)', paddingBottom: '1rem' }}>
-                <button 
-                    onClick={() => setActiveTab('sales')}
-                    style={{ 
-                        padding: '0.75rem 1.5rem', 
-                        background: activeTab === 'sales' ? 'var(--primary)' : 'none', 
-                        color: activeTab === 'sales' ? 'white' : 'var(--on-surface-variant)', 
-                        border: 'none', 
-                        borderRadius: '0.75rem', 
-                        fontWeight: '700', 
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    <FaChartLine style={{ marginRight: '0.5rem' }} /> Reporte de Ventas
-                </button>
-                <button 
-                    onClick={() => setActiveTab('inventory')}
-                    style={{ 
-                        padding: '0.75rem 1.5rem', 
-                        background: activeTab === 'inventory' ? 'var(--primary)' : 'none', 
-                        color: activeTab === 'inventory' ? 'white' : 'var(--on-surface-variant)', 
-                        border: 'none', 
-                        borderRadius: '0.75rem', 
-                        fontWeight: '700', 
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    <FaChartBar style={{ marginRight: '0.5rem' }} /> Reporte de Inventario
-                </button>
-            </div>
-
-            {loading ? (
-                <div style={{ textAlign: 'center', padding: '5rem', color: 'var(--on-surface-variant)' }}>Generando reporte...</div>
-            ) : activeTab === 'sales' && salesReport ? (
-                <div style={{ display: 'grid', gap: '2rem' }}>
-                    {/* Summary Cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-                        <div className="stat-card">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ background: 'var(--primary-container)', color: 'var(--primary)', padding: '0.75rem', borderRadius: '0.75rem' }}><FaChartLine size={24} /></div>
-                                <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><FaArrowUp /> Período</span>
-                            </div>
-                            <h4 style={{ color: 'var(--on-surface-variant)', marginTop: '1rem', fontSize: '0.875rem' }}>Ingresos Totales</h4>
-                            <div style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--on-surface)' }}>{formatPrice(salesReport.summary.totalRevenue)}</div>
-                        </div>
-                        <div className="stat-card">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ background: 'var(--secondary-container)', color: 'var(--secondary)', padding: '0.75rem', borderRadius: '0.75rem' }}><FaShoppingCart size={24} /></div>
-                            </div>
-                            <h4 style={{ color: 'var(--on-surface-variant)', marginTop: '1rem', fontSize: '0.875rem' }}>Pedidos Realizados</h4>
-                            <div style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--on-surface)' }}>{salesReport.summary.totalOrders}</div>
-                        </div>
-                        <div className="stat-card">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '0.75rem', borderRadius: '0.75rem' }}><FaCalendarAlt size={24} /></div>
-                            </div>
-                            <h4 style={{ color: 'var(--on-surface-variant)', marginTop: '1rem', fontSize: '0.875rem' }}>Ticket Promedio</h4>
-                            <div style={{ fontSize: '1.75rem', fontWeight: '900', color: 'var(--on-surface)' }}>{formatPrice(salesReport.summary.averageOrder)}</div>
-                        </div>
+            {/* TAB VENTAS  */}
+            {activeTab === "sales" && (
+                <>
+                    {/* Selector de período */}
+                    <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
+                        {PERIOD_OPTIONS.map(opt => (
+                            <button
+                                key={opt.value}
+                                onClick={() => handlePeriodChange(opt.value)}
+                                style={{
+                                    padding: "0.5rem 1.25rem", borderRadius: "2rem",
+                                    border: period === opt.value ? "none" : "1px solid var(--surface-high)",
+                                    background: period === opt.value ? "var(--primary)" : "var(--surface-low)",
+                                    color: period === opt.value ? "white" : "var(--on-surface-variant)",
+                                    fontWeight: "700", cursor: "pointer", fontSize: "0.85rem",
+                                    transition: "all 0.2s",
+                                }}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-                        {/* Monthly Chart (Simulated) */}
-                        <div className="stat-card">
-                            <h3 style={{ marginBottom: '2rem', fontSize: '1.1rem', fontWeight: '800' }}>Ventas por Mes</h3>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', height: '250px', gap: '1rem', paddingBottom: '2rem' }}>
-                                {salesReport.byMonth.map(m => {
-                                    const maxTotal = Math.max(...salesReport.byMonth.map(x => x.total), 1);
-                                    const height = (m.total / maxTotal) * 100;
-                                    return (
-                                        <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                                            <div style={{ width: '100%', height: `${height}%`, background: 'var(--primary)', borderRadius: '0.5rem 0.5rem 0 0', position: 'relative' }} title={formatPrice(m.total)}>
-                                                <div style={{ position: 'absolute', top: '-1.5rem', left: '50%', transform: 'translateX(-50%)', fontSize: '0.7rem', fontWeight: '700' }}>{formatPrice(m.total).split(',')[0]}</div>
-                                            </div>
-                                            <span style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)', fontWeight: '700' }}>{getMonthName(m.month)}</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                    {loadingSales ? (
+                        <div style={{ textAlign: "center", padding: "4rem", color: "var(--on-surface-variant)" }}>
+                            Cargando reporte de ventas...
                         </div>
-
-                        {/* Top Products */}
-                        <div className="stat-card">
-                            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: '800' }}>Top Productos</h3>
-                            <div style={{ display: 'grid', gap: '1rem' }}>
-                                {salesReport.topProducts.map((p, idx) => (
-                                    <div key={p.productId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'var(--surface-low)', borderRadius: '0.75rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            <span style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--primary)' }}>#{idx+1}</span>
-                                            <div style={{ fontSize: '0.85rem', fontWeight: '700', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.productName}</div>
+                    ) : salesReport && (
+                        <>
+                            {/* Cards resumen */}
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginBottom: "2rem" }}>
+                                {[
+                                    { label: "Total Órdenes",   value: salesReport.summary.totalOrders.toString(),      color: "#2563eb", icon: <FaChartBar /> },
+                                    { label: "Ingresos Totales", value: formatPrice(salesReport.summary.totalRevenue),   color: "#059669", icon: <FaChartLine /> },
+                                    { label: "Ticket Promedio",  value: formatPrice(salesReport.summary.averageOrder),   color: "#7c3aed", icon: <FaTrophy /> },
+                                ].map((card, i) => (
+                                    <div key={i} className="stat-card">
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+                                            <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "var(--on-surface-variant)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                                {card.label}
+                                            </span>
+                                            <span style={{ color: card.color, background: `${card.color}15`, padding: "0.35rem 0.6rem", borderRadius: "0.5rem", fontSize: "0.85rem" }}>
+                                                {card.icon}
+                                            </span>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: '0.85rem', fontWeight: '800' }}>{p.totalQuantity} ud.</div>
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--on-surface-variant)' }}>{formatPrice(p.totalRevenue)}</div>
+                                        <div style={{ fontSize: "1.75rem", fontWeight: "800", color: "var(--on-surface)", letterSpacing: "-0.02em" }}>
+                                            {card.value}
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                    </div>
-                </div>
-            ) : activeTab === 'inventory' && inventoryReport ? (
-                <div style={{ display: 'grid', gap: '2rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                        {/* Critical Alerts */}
-                        <div className="stat-card" style={{ borderLeft: '4px solid #ef4444' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <FaExclamationTriangle color="#ef4444" size={24} />
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>Agotados ({inventoryReport.summary.outOfStockCount})</h3>
-                            </div>
-                            <div style={{ display: 'grid', gap: '0.75rem' }}>
-                                {inventoryReport.outOfStockProducts.length === 0 ? (
-                                    <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.9rem' }}>No hay productos agotados.</p>
-                                ) : inventoryReport.outOfStockProducts.slice(0, 5).map(p => (
-                                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.5rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '0.5rem' }}>
-                                        <span style={{ fontWeight: '700' }}>{p.name}</span>
-                                        <span style={{ color: 'var(--on-surface-variant)' }}>{p.category}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
 
-                        <div className="stat-card" style={{ borderLeft: '4px solid #f59e0b' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <FaExclamationTriangle color="#f59e0b" size={24} />
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>Stock Bajo ({inventoryReport.summary.lowStockCount})</h3>
-                            </div>
-                            <div style={{ display: 'grid', gap: '0.75rem' }}>
-                                {inventoryReport.lowStockProducts.length === 0 ? (
-                                    <p style={{ color: 'var(--on-surface-variant)', fontSize: '0.9rem' }}>Todo el stock está en niveles óptimos.</p>
-                                ) : inventoryReport.lowStockProducts.slice(0, 5).map(p => (
-                                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.5rem', background: 'rgba(245, 158, 11, 0.05)', borderRadius: '0.5rem' }}>
-                                        <span style={{ fontWeight: '700' }}>{p.name}</span>
-                                        <span style={{ fontWeight: '800', color: '#f59e0b' }}>{p.stock} ud.</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                            {/* Gráfica de barras + por estado */}
+                            <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
 
-                    <div className="stat-card">
-                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: '800' }}>Resumen de Movimientos</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-                            {inventoryReport.movementsSummary.map(m => (
-                                <div key={m.type} style={{ padding: '1.5rem', background: 'var(--surface-low)', borderRadius: '1rem', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '0.8rem', fontWeight: '800', color: 'var(--on-surface-variant)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>{m.type === 'IN' ? 'Entradas' : m.type === 'OUT' ? 'Salidas' : 'Ajustes'}</div>
-                                    <div style={{ fontSize: '2rem', fontWeight: '900', color: m.type === 'IN' ? '#10b981' : m.type === 'OUT' ? '#ef4444' : '#f59e0b' }}>{m.count}</div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--on-surface-variant)' }}>Total: {m.totalQuantity} unidades</div>
+                                {/* Gráfica ventas por mes */}
+                                <div className="stat-card">
+                                    <h3 style={{ fontSize: "1rem", fontWeight: "700", color: "var(--on-surface)", marginBottom: "1.5rem" }}>
+                                        Ventas por Mes
+                                    </h3>
+                                    {renderBarChart()}
                                 </div>
-                            ))}
+
+                                {/* Por estado */}
+                                <div className="stat-card">
+                                    <h3 style={{ fontSize: "1rem", fontWeight: "700", color: "var(--on-surface)", marginBottom: "1.5rem" }}>
+                                        Por Estado
+                                    </h3>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                                        {salesReport.byStatus.length === 0 ? (
+                                            <p style={{ color: "var(--on-surface-variant)", fontSize: "0.85rem" }}>Sin datos</p>
+                                        ) : salesReport.byStatus.map(row => (
+                                            <div key={row.status} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                                                <span style={{
+                                                    padding: "0.25rem 0.6rem", borderRadius: "2rem",
+                                                    fontSize: "0.72rem", fontWeight: "700",
+                                                    background: STATUS_COLOR[row.status]?.bg || "var(--surface-low)",
+                                                    color: STATUS_COLOR[row.status]?.color || "var(--on-surface)",
+                                                    minWidth: "85px", textAlign: "center"
+                                                }}>
+                                                    {STATUS_LABEL[row.status] || row.status}
+                                                </span>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{
+                                                        height: "6px", background: "var(--surface-high)",
+                                                        borderRadius: "3px", overflow: "hidden"
+                                                    }}>
+                                                        <div style={{
+                                                            height: "100%", borderRadius: "3px",
+                                                            background: STATUS_COLOR[row.status]?.color || "var(--primary)",
+                                                            width: `${Math.min((row.count / (salesReport.summary.totalOrders || 1)) * 100, 100)}%`,
+                                                        }} />
+                                                    </div>
+                                                </div>
+                                                <span style={{ fontSize: "0.8rem", fontWeight: "700", color: "var(--on-surface)", minWidth: "20px", textAlign: "right" }}>
+                                                    {row.count}
+                                                </span>
+                                                <span style={{ fontSize: "0.75rem", color: "var(--on-surface-variant)", minWidth: "80px", textAlign: "right" }}>
+                                                    {formatPrice(row.total)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Top productos */}
+                            <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
+                                <div style={{ padding: "1.5rem 1.5rem 1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                    <FaTrophy style={{ color: "#d97706" }} />
+                                    <h3 style={{ fontSize: "1rem", fontWeight: "700", color: "var(--on-surface)" }}>
+                                        Top 10 Productos Más Vendidos
+                                    </h3>
+                                </div>
+                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                                    <thead>
+                                        <tr style={{ background: "var(--surface-low)", color: "var(--on-surface-variant)", fontSize: "0.72rem", fontWeight: "700", textTransform: "uppercase" }}>
+                                            <th style={{ padding: "0.75rem 1.5rem", textAlign: "left" }}>#</th>
+                                            <th style={{ padding: "0.75rem 1.5rem", textAlign: "left" }}>Producto</th>
+                                            <th style={{ padding: "0.75rem 1.5rem", textAlign: "right" }}>Unidades</th>
+                                            <th style={{ padding: "0.75rem 1.5rem", textAlign: "right" }}>Ingresos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {salesReport.topProducts.length === 0 ? (
+                                            <tr><td colSpan={4} style={{ padding: "2rem", textAlign: "center", color: "var(--on-surface-variant)" }}>Sin datos</td></tr>
+                                        ) : salesReport.topProducts.map((p, i) => (
+                                            <tr key={p.productId} style={{ borderBottom: "1px solid var(--surface-high)" }}>
+                                                <td style={{ padding: "1rem 1.5rem" }}>
+                                                    <span style={{
+                                                        width: "26px", height: "26px", borderRadius: "50%",
+                                                        background: i < 3 ? "rgba(217,119,6,0.15)" : "var(--surface-low)",
+                                                        color: i < 3 ? "#d97706" : "var(--on-surface-variant)",
+                                                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                                        fontSize: "0.75rem", fontWeight: "800"
+                                                    }}>
+                                                        {i + 1}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: "1rem 1.5rem", fontWeight: "700", color: "var(--on-surface)" }}>
+                                                    {p.productName}
+                                                </td>
+                                                <td style={{ padding: "1rem 1.5rem", textAlign: "right", fontWeight: "800", color: "var(--primary)", fontSize: "1rem" }}>
+                                                    {p.totalQuantity}
+                                                </td>
+                                                <td style={{ padding: "1rem 1.5rem", textAlign: "right", fontWeight: "700", color: "var(--on-surface)" }}>
+                                                    {formatPrice(p.totalRevenue)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
+                </>
+            )}
+
+            {/*  TAB INVENTARIO */}
+            {activeTab === "inventory" && (
+                <>
+                    {loadingInventory ? (
+                        <div style={{ textAlign: "center", padding: "4rem", color: "var(--on-surface-variant)" }}>
+                            Cargando reporte de inventario...
                         </div>
-                    </div>
-                </div>
-            ) : (
-                <div style={{ textAlign: 'center', padding: '5rem', color: 'var(--on-surface-variant)' }}>No hay datos disponibles para este período.</div>
+                    ) : inventoryReport && (
+                        <>
+                            {/* Cards resumen */}
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginBottom: "2rem" }}>
+                                <div className="stat-card">
+                                    <div style={{ fontSize: "0.75rem", fontWeight: "700", color: "var(--on-surface-variant)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "1rem" }}>
+                                        Sin Stock
+                                    </div>
+                                    <div style={{ fontSize: "2.5rem", fontWeight: "800", color: "#dc2626" }}>
+                                        {inventoryReport.summary.outOfStockCount}
+                                    </div>
+                                    <div style={{ fontSize: "0.8rem", color: "var(--on-surface-variant)", marginTop: "0.25rem" }}>productos agotados</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div style={{ fontSize: "0.75rem", fontWeight: "700", color: "var(--on-surface-variant)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "1rem" }}>
+                                        Stock Bajo
+                                    </div>
+                                    <div style={{ fontSize: "2.5rem", fontWeight: "800", color: "#d97706" }}>
+                                        {inventoryReport.summary.lowStockCount}
+                                    </div>
+                                    <div style={{ fontSize: "0.8rem", color: "var(--on-surface-variant)", marginTop: "0.25rem" }}>productos con menos de 10 uds</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div style={{ fontSize: "0.75rem", fontWeight: "700", color: "var(--on-surface-variant)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
+                                        Movimientos por tipo
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                                        {inventoryReport.movementsSummary.map(m => (
+                                            <div key={m.type} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                <span style={{
+                                                    display: "flex", alignItems: "center", gap: "0.35rem",
+                                                    fontSize: "0.8rem", fontWeight: "700",
+                                                    color: MOV_TYPE_CONFIG[m.type]?.color || "var(--on-surface-variant)"
+                                                }}>
+                                                    {MOV_TYPE_CONFIG[m.type]?.icon}
+                                                    {MOV_TYPE_CONFIG[m.type]?.label || m.type}
+                                                </span>
+                                                <span style={{ fontWeight: "800", color: "var(--on-surface)", fontSize: "0.9rem" }}>
+                                                    {m.count} ({m.totalQuantity} uds)
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Sin stock + Stock bajo */}
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
+
+                                {/* Sin stock */}
+                                <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
+                                    <div style={{ padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", gap: "0.5rem", borderBottom: "1px solid var(--surface-high)" }}>
+                                        <FaExclamationTriangle style={{ color: "#dc2626" }} />
+                                        <h3 style={{ fontSize: "0.95rem", fontWeight: "700", color: "var(--on-surface)" }}>
+                                            Productos sin stock ({inventoryReport.summary.outOfStockCount})
+                                        </h3>
+                                    </div>
+                                    {inventoryReport.outOfStockProducts.length === 0 ? (
+                                        <div style={{ padding: "2rem", textAlign: "center", color: "var(--on-surface-variant)", fontSize: "0.85rem" }}>
+                                            ✅ Sin productos agotados
+                                        </div>
+                                    ) : (
+                                        <div style={{ maxHeight: "280px", overflowY: "auto" }}>
+                                            {inventoryReport.outOfStockProducts.map(p => (
+                                                <div key={p.id} style={{ padding: "0.85rem 1.5rem", borderBottom: "1px solid var(--surface-high)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                    <div>
+                                                        <div style={{ fontWeight: "700", color: "var(--on-surface)", fontSize: "0.85rem" }}>{p.name}</div>
+                                                        <div style={{ fontSize: "0.72rem", color: "var(--on-surface-variant)" }}>
+                                                            {p.sku ? `SKU: ${p.sku}` : ""} {p.category ? `· ${p.category}` : ""}
+                                                        </div>
+                                                    </div>
+                                                    <span style={{ background: "rgba(239,68,68,0.12)", color: "#dc2626", padding: "0.2rem 0.6rem", borderRadius: "2rem", fontSize: "0.72rem", fontWeight: "800" }}>
+                                                        0 uds
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Stock bajo */}
+                                <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
+                                    <div style={{ padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", gap: "0.5rem", borderBottom: "1px solid var(--surface-high)" }}>
+                                        <FaExclamationTriangle style={{ color: "#d97706" }} />
+                                        <h3 style={{ fontSize: "0.95rem", fontWeight: "700", color: "var(--on-surface)" }}>
+                                            Stock bajo ({inventoryReport.summary.lowStockCount})
+                                        </h3>
+                                    </div>
+                                    {inventoryReport.lowStockProducts.length === 0 ? (
+                                        <div style={{ padding: "2rem", textAlign: "center", color: "var(--on-surface-variant)", fontSize: "0.85rem" }}>
+                                            ✅ Sin alertas de stock bajo
+                                        </div>
+                                    ) : (
+                                        <div style={{ maxHeight: "280px", overflowY: "auto" }}>
+                                            {inventoryReport.lowStockProducts.map(p => (
+                                                <div key={p.id} style={{ padding: "0.85rem 1.5rem", borderBottom: "1px solid var(--surface-high)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                    <div>
+                                                        <div style={{ fontWeight: "700", color: "var(--on-surface)", fontSize: "0.85rem" }}>{p.name}</div>
+                                                        <div style={{ fontSize: "0.72rem", color: "var(--on-surface-variant)" }}>
+                                                            {p.sku ? `SKU: ${p.sku}` : ""} {p.category ? `· ${p.category}` : ""}
+                                                        </div>
+                                                    </div>
+                                                    <span style={{
+                                                        background: p.stock <= 3 ? "rgba(239,68,68,0.12)" : "rgba(245,158,11,0.12)",
+                                                        color: p.stock <= 3 ? "#dc2626" : "#d97706",
+                                                        padding: "0.2rem 0.6rem", borderRadius: "2rem",
+                                                        fontSize: "0.72rem", fontWeight: "800"
+                                                    }}>
+                                                        {p.stock} uds
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </>
             )}
         </div>
     );

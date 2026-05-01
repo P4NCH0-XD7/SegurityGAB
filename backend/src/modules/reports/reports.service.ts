@@ -283,7 +283,20 @@ export class ReportsService {
         stock:    p.stock,
         category: (p as any).category?.name ?? null,
       })),
-      recentMovements,
+      recentMovements: recentMovements.map(m => ({
+        id: m.id!,
+        productId: m.productId!,
+        type: m.type!,
+        quantity: m.quantity!,
+        reason: m.reason ?? null,
+        referenceId: m.referenceId ?? null,
+        createdAt: m.createdAt!,
+        product: m.product ? {
+          id: m.product.id,
+          name: m.product.name,
+          sku: m.product.sku
+        } : undefined
+      })),
       movementsSummary: movementsSummary.map(row => ({
         type:          row.type,
         count:         Number(row.count),

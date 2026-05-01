@@ -178,10 +178,18 @@ export class SalesService {
 
     // Un cliente solo puede ver sus propias ventas, no cambiar estado
     // Solo Admin puede cambiar el estado
+    // Un cliente solo puede cambiar el estado a CANCELLED y solo si es dueño de la venta
+    // y la venta está en PENDING.
     if (requestingUserRoleId !== 1) {
-      throw new ForbiddenException(
-        'Solo un administrador puede cambiar el estado de una venta.',
-      );
+      if (sale.userId !== requestingUserId) {
+        throw new ForbiddenException('No tienes permiso para modificar esta venta.');
+      }
+      if (dto.status !== SaleStatus.CANCELLED) {
+        throw new ForbiddenException('Solo un administrador puede cambiar el estado a algo distinto de CANCELADO.');
+      }
+      if (sale.status !== SaleStatus.PENDING) {
+        throw new BadRequestException('Solo puedes cancelar pedidos que estén en estado PENDIENTE.');
+      }
     }
 
     // Validar que la transición de estado sea válida
