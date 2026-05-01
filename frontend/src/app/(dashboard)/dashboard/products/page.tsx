@@ -27,6 +27,8 @@ export default function ProductsManagementPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+    const [isDeletingBulk, setIsDeletingBulk] = useState(false);
     const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
     const [formData, setFormData] = useState<Partial<Product>>({
         name: "",
@@ -41,6 +43,10 @@ export default function ProductsManagementPage() {
 
     const { token } = useAuthStore();
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(price);
+    };
 
     useEffect(() => {
         fetchProducts();
@@ -143,13 +149,8 @@ export default function ProductsManagementPage() {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("¿Estás seguro de que deseas eliminar este producto permanentemente?")) return;
+        if (!confirm("¿Estás seguro de que deseas eliminar este producto?")) return;
         
-        if (!token) {
-            toast.error("Error de autenticación");
-            return;
-        }
-
         try {
             const res = await fetch(`${API_URL}/products/${id}`, {
                 method: 'DELETE',
@@ -159,14 +160,52 @@ export default function ProductsManagementPage() {
             });
 
             if (res.ok) {
-                toast.success("Producto eliminado (Soft-delete aplicado)");
+                toast.success("Producto eliminado");
                 fetchProducts();
             } else {
-                const err = await res.json().catch(() => ({}));
-                toast.error(err.message || "No se pudo eliminar el producto");
+                toast.error("Error al eliminar el producto");
             }
         } catch (error) {
             toast.error("Error de conexión");
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        if (!confirm(`¿Estás seguro de eliminar ${selectedProducts.length} productos seleccionados?`)) return;
+        
+        setIsDeletingBulk(true);
+        try {
+            // El backend usualmente no tiene delete bulk, así que lo hacemos secuencial o paralelamente
+            // Pero para ser limpios, simulamos una petición o lo hacemos uno por uno
+            const deletePromises = selectedProducts.map(id => 
+                fetch(`${API_URL}/products/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            );
+
+            await Promise.all(deletePromises);
+            toast.success(`${selectedProducts.length} productos eliminados`);
+            setSelectedProducts([]);
+            fetchProducts();
+        } catch (error) {
+            toast.error("Error al eliminar algunos productos");
+        } finally {
+            setIsDeletingBulk(false);
+        }
+    };
+
+    const toggleProductSelection = (id: number) => {
+        setSelectedProducts(prev => 
+            prev.includes(id) ? prev.filter(pId => pId !== id) : [...prev, id]
+        );
+    };
+
+    const toggleAllSelection = () => {
+        if (selectedProducts.length === filteredProducts.length) {
+            setSelectedProducts([]);
+        } else {
+            setSelectedProducts(filteredProducts.map(p => p.id));
         }
     };
 
@@ -213,6 +252,39 @@ export default function ProductsManagementPage() {
                 </button>
             </div>
 
+            {/* Bulk Actions Bar */}
+            {selectedProducts.length > 0 && (
+                <div style={{ 
+                    background: 'var(--primary-container)', 
+                    padding: '1rem 2rem', 
+                    borderRadius: '1rem', 
+                    marginBottom: '1.5rem', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    animation: 'slideDown 0.3s ease'
+                }}>
+                    <div style={{ color: 'var(--primary)', fontWeight: '700' }}>
+                        {selectedProducts.length} productos seleccionados
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button 
+                            onClick={handleDeleteSelected}
+                            disabled={isDeletingBulk}
+                            style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}
+                        >
+                            {isDeletingBulk ? 'Eliminando...' : 'Eliminar Seleccionados'}
+                        </button>
+                        <button 
+                            onClick={() => setSelectedProducts([])}
+                            style={{ background: 'none', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Filters Bar */}
             <div style={{ 
                 background: 'var(--surface-low)', 
@@ -251,6 +323,14 @@ export default function ProductsManagementPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ background: 'var(--surface-low)', color: 'var(--on-surface-variant)', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase' }}>
+                            <th style={{ padding: '1.25rem', textAlign: 'left', width: '50px' }}>
+                                <input 
+                                    type="checkbox" 
+                                    checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                                    onChange={toggleAllSelection}
+                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                />
+                            </th>
                             <th style={{ padding: '1.25rem', textAlign: 'left' }}>Producto</th>
                             <th style={{ padding: '1.25rem', textAlign: 'left' }}>SKU</th>
                             <th style={{ padding: '1.25rem', textAlign: 'left' }}>Precio</th>
@@ -265,10 +345,28 @@ export default function ProductsManagementPage() {
                         ) : filteredProducts.length === 0 ? (
                             <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>No se encontraron productos</td></tr>
                         ) : filteredProducts.map((product) => (
-                            <tr key={product.id} style={{ borderBottom: '1px solid var(--surface-high)', transition: 'background 0.2s ease' }}>
+                            <tr key={product.id} style={{ borderBottom: '1px solid var(--surface-high)', transition: 'background 0.2s ease', background: selectedProducts.includes(product.id) ? 'var(--primary-container)' : 'transparent' }}>
+                                <td style={{ padding: '1.25rem', textAlign: 'left' }}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={selectedProducts.includes(product.id)}
+                                        onChange={() => toggleProductSelection(product.id)}
+                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                    />
+                                </td>
                                 <td style={{ padding: '1.25rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div style={{ width: '48px', height: '48px', background: 'var(--surface-high)', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                        <div style={{ 
+                                            width: '60px', 
+                                            height: '60px', 
+                                            background: 'var(--surface-high)', 
+                                            borderRadius: '0.75rem', 
+                                            overflow: 'hidden', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            border: '1px solid var(--surface-high)'
+                                        }}>
                                             {product.imageUrl ? (
                                                 <img 
                                                     src={getDisplayImageUrl(product.imageUrl)} 
@@ -277,11 +375,11 @@ export default function ProductsManagementPage() {
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
-                                                        target.src = "https://placehold.co/100x100?text=Error";
+                                                        target.src = "https://via.placeholder.com/60?text=Error";
                                                     }}
                                                 />
                                             ) : (
-                                                <FaBoxOpen color="var(--on-surface-variant)" />
+                                                <FaBoxOpen color="var(--on-surface-variant)" size={24} />
                                             )}
                                         </div>
                                         <div>
@@ -291,7 +389,9 @@ export default function ProductsManagementPage() {
                                     </div>
                                 </td>
                                 <td style={{ padding: '1.25rem', color: 'var(--on-surface-variant)', fontFamily: 'monospace' }}>{product.sku || 'N/A'}</td>
-                                <td style={{ padding: '1.25rem', fontWeight: '700', color: 'var(--primary)' }}>${Number(product.price).toFixed(2)}</td>
+                                <td style={{ padding: '1.25rem' }}>
+                                    <div style={{ fontWeight: '800', fontSize: '1.1rem', color: 'var(--primary)' }}>{formatPrice(product.price)}</div>
+                                </td>
                                 <td style={{ padding: '1.25rem' }}>
                                     <span style={{ 
                                         color: product.stock < 10 ? 'var(--error)' : 'var(--on-surface)',

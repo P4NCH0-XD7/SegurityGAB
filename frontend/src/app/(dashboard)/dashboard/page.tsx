@@ -1,25 +1,103 @@
-import { FaChartLine, FaShoppingBag, FaUserCheck, FaExclamationTriangle, FaBoxOpen, FaClipboardList, FaTicketAlt } from "react-icons/fa";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { FaChartLine, FaShoppingBag, FaUserCheck, FaExclamationTriangle, FaBoxOpen, FaClipboardList, FaTicketAlt, FaSpinner } from "react-icons/fa";
 import SecurityNews from "@/components/dashboard/SecurityNews";
+import { useAuthStore } from '@/store/useAuthStore';
+import { formatPrice } from '@/utils/formatters';
+
+interface DashboardData {
+    totalSales: number;
+    totalRevenue: number;
+    pendingSales: number;
+    totalUsers: number;
+    totalProducts: number;
+    outOfStock: number;
+    lowStock: number;
+    recentSales: Array<{
+        id: number;
+        totalAmount: number;
+        status: string;
+        createdAt: string;
+        user?: { name: string };
+    }>;
+}
 
 export default function DashboardPage() {
+    const { token } = useAuthStore();
+    const [data, setData] = useState<DashboardData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch('http://localhost:3001/api/v1/reports/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar datos del dashboard');
+
+                const result = await response.json();
+                setData(result);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (token) {
+            fetchDashboardData();
+        }
+    }, [token]);
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', color: 'var(--primary)' }}>
+                <FaSpinner className="spinner" style={{ fontSize: '3rem' }} />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--error)' }}>
+                <FaExclamationTriangle style={{ fontSize: '3rem', marginBottom: '1rem' }} />
+                <h3>Error al cargar el Dashboard</h3>
+                <p>{error}</p>
+            </div>
+        );
+    }
+
     const stats = [
-        { label: "Ventas Totales", value: "$1,240.00", trend: "+15%", color: "#10b981", icon: <FaChartLine /> },
-        { label: "Pedidos Nuevos", value: "12", trend: "-5%", color: "#ef4444", icon: <FaShoppingBag /> },
-        { label: "Nuevos Clientes", value: "8", trend: "Estable", color: "#64748b", icon: <FaUserCheck /> },
-        { label: "Alertas Activas", value: "3", trend: "Acción", color: "#f59e0b", icon: <FaExclamationTriangle /> },
+        { label: "Ventas Totales", value: formatPrice(data?.totalRevenue || 0), trend: `+${data?.totalSales || 0}`, color: "#10b981", icon: <FaChartLine /> },
+        { label: "Pedidos Pendientes", value: String(data?.pendingSales || 0), trend: "Pendiente", color: "#f59e0b", icon: <FaShoppingBag /> },
+        { label: "Usuarios Totales", value: String(data?.totalUsers || 0), trend: "Activos", color: "#3b82f6", icon: <FaUserCheck /> },
+        { label: "Alertas Stock", value: String((data?.outOfStock || 0) + (data?.lowStock || 0)), trend: "Crítico", color: "#ef4444", icon: <FaExclamationTriangle /> },
     ];
 
     const alerts = [
-        { type: "Stock", title: "Producto sin stock", desc: "Cámara exterior WiFi 4K (20 uds)", icon: <FaBoxOpen />, color: "#ef4444" },
-        { type: "Pago", title: "Pedido pendiente", desc: "Orden #ORD-9401 espera pago", icon: <FaClipboardList />, color: "#f59e0b" },
-        { type: "Soporte", title: "Ticket abierto", desc: "Reclamación de garantía #TK-102", icon: <FaTicketAlt />, color: "#3b82f6" },
+        ...(data?.outOfStock ? [{ type: "Stock", title: "Sin Stock", desc: `${data.outOfStock} productos agotados`, icon: <FaBoxOpen />, color: "#ef4444" }] : []),
+        ...(data?.lowStock ? [{ type: "Stock", title: "Stock Bajo", desc: `${data.lowStock} productos por agotarse`, icon: <FaBoxOpen />, color: "#f59e0b" }] : []),
+        ...(data?.pendingSales ? [{ type: "Ventas", title: "Pendientes", desc: `${data.pendingSales} pedidos esperan pago`, icon: <FaClipboardList />, color: "#3b82f6" }] : []),
     ];
 
-    const recentOrders = [
-        { id: "#ORD-9401", customer: "Juan Pérez", total: "$129.00", status: "Pendiente", date: "Hace 2h" },
-        { id: "#ORD-9398", customer: "Maria Silva", total: "$245.50", status: "Completado", date: "Hace 5h" },
-        { id: "#ORD-9395", customer: "Carlos Ruiz", total: "$89.00", status: "Completado", date: "Ayer" },
-    ];
+    // Si no hay alertas dinámicas, mostramos un mensaje de "Todo en orden"
+    if (alerts.length === 0) {
+        alerts.push({ type: "Info", title: "Sistema Limpio", desc: "No hay alertas críticas pendientes", icon: <FaUserCheck />, color: "#10b981" });
+    }
+
+    const recentOrders = data?.recentSales.map(sale => ({
+        id: `#ORD-${sale.id}`,
+        customer: sale.user?.name || 'Cliente Invitado',
+        total: formatPrice(sale.totalAmount),
+        status: sale.status.charAt(0).toUpperCase() + sale.status.slice(1).toLowerCase(),
+        date: new Date(sale.createdAt).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })
+    })) || [];
 
     return (
         <div className="dashboard-content" style={{ background: 'var(--surface)' }}>
@@ -47,7 +125,7 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                     {/* Sales Chart SVG */}
                     <div className="stat-card">
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '2rem', color: 'var(--on-surface)' }}>Evolución de Ventas (7 días)</h3>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '2rem', color: 'var(--on-surface)' }}>Evolución de Ventas</h3>
                         <div style={{ height: '260px', position: 'relative' }}>
                             <svg viewBox="0 0 400 150" style={{ width: '100%', height: '100%' }}>
                                 <path 
@@ -93,7 +171,7 @@ export default function DashboardPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {recentOrders.map((order, idx) => (
+                                    {recentOrders.length > 0 ? recentOrders.map((order, idx) => (
                                         <tr key={idx} style={{ fontSize: '0.9rem', color: 'var(--on-surface)' }}>
                                             <td style={{ padding: '1.25rem 0', fontWeight: '700' }}>{order.id}</td>
                                             <td style={{ padding: '1.25rem 0' }}>{order.customer}</td>
@@ -104,15 +182,19 @@ export default function DashboardPage() {
                                                     borderRadius: '2rem', 
                                                     fontSize: '0.75rem',
                                                     fontWeight: '700',
-                                                    background: order.status === 'Completado' ? 'var(--secondary-container)' : 'rgba(245, 158, 11, 0.15)',
-                                                    color: order.status === 'Completado' ? 'var(--secondary)' : '#b45309'
+                                                    background: order.status === 'Paid' || order.status === 'Delivered' ? 'var(--secondary-container)' : 'rgba(245, 158, 11, 0.15)',
+                                                    color: order.status === 'Paid' || order.status === 'Delivered' ? 'var(--secondary)' : '#b45309'
                                                 }}>
                                                     {order.status}
                                                 </span>
                                             </td>
                                             <td style={{ padding: '1.25rem 0', color: 'var(--on-surface-variant)' }}>{order.date}</td>
                                         </tr>
-                                    ))}
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--on-surface-variant)' }}>No hay pedidos recientes</td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -154,6 +236,15 @@ export default function DashboardPage() {
                     <SecurityNews />
                 </div>
             </div>
+            <style jsx>{`
+                .spinner {
+                    animation: spin 1s linear infinite;
+                }
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
         </div>
     );
 }

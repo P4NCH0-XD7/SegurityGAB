@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
-import { FaThLarge, FaShoppingCart, FaBoxes, FaUsers, FaChartBar, FaCog, FaBell, FaUserCircle, FaSignOutAlt, FaStore, FaClipboardList } from "react-icons/fa";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { FaThLarge, FaShoppingCart, FaBoxes, FaUsers, FaChartBar, FaCog, FaBell, FaUserCircle, FaSignOutAlt, FaStore, FaClipboardList, FaBars, FaTimes, FaTags } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import NotificationDropdown from "@/components/dashboard/NotificationDropdown";
 import "../../styles/dashboard/dashboard.css";
 
 export default function DashboardLayout({
@@ -13,6 +14,8 @@ export default function DashboardLayout({
 }) {
     const { user, isAuthenticated, logout, checkAuth, isInitialized } = useAuthStore();
     const router = useRouter();
+    const pathname = usePathname();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     useEffect(() => {
         if (!isInitialized) {
@@ -46,7 +49,7 @@ export default function DashboardLayout({
         { label: "Pedidos", icon: <FaShoppingCart />, href: "/dashboard/sales" },
         { label: "Productos", icon: <FaBoxes />, href: "/dashboard/products" },
         { label: "Inventario", icon: <FaClipboardList />, href: "/dashboard/inventory" },
-        { label: "Categorías", icon: <FaCog />, href: "/dashboard/categories" },
+        { label: "Categorías", icon: <FaTags />, href: "/dashboard/categories" },
         { label: "Usuarios", icon: <FaUsers />, href: "/dashboard/users" },
         { label: "Reportes", icon: <FaChartBar />, href: "/dashboard/reports" },
     ];
@@ -54,15 +57,28 @@ export default function DashboardLayout({
     return (
         <div className="dashboard-container">
             {/* Sidebar */}
-            <aside className="sidebar">
-                <Link href="/dashboard" className="sidebar-title" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                    SegurityGAB
-                </Link>
+            <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+                    <Link href="/dashboard" className="sidebar-title" style={{ textDecoration: 'none', color: 'inherit', margin: 0 }}>
+                        SegurityGAB
+                    </Link>
+                    <button 
+                        onClick={() => setIsSidebarOpen(false)} 
+                        style={{ background: 'none', border: 'none', color: 'var(--on-surface-variant)', cursor: 'pointer', fontSize: '1.5rem', display: 'none' }}
+                        className="mobile-only"
+                    >
+                        <FaTimes />
+                    </button>
+                </div>
                 <nav style={{ flex: 1 }}>
                     <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {navItems.map((item) => (
                             <li key={item.label}>
-                                <Link href={item.href} className="nav-link">
+                                <Link 
+                                    href={item.href} 
+                                    className={`nav-link ${pathname === item.href ? 'active' : ''}`}
+                                    onClick={() => setIsSidebarOpen(false)}
+                                >
                                     <span style={{ fontSize: '1.2rem', display: 'flex' }}>{item.icon}</span>
                                     {item.label}
                                 </Link>
@@ -82,14 +98,20 @@ export default function DashboardLayout({
             <div className="dashboard-main">
                 {/* TopBar */}
                 <header className="topbar">
-                    <div style={{ color: 'var(--on-surface-variant)', fontWeight: '600' }}>
-                        Bienvenido de nuevo, <span style={{ color: 'var(--on-surface)' }}>{user?.name || 'Administrador'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button 
+                            onClick={() => setIsSidebarOpen(true)}
+                            style={{ background: 'none', border: 'none', color: 'var(--on-surface)', cursor: 'pointer', fontSize: '1.5rem', display: 'none' }}
+                            className="mobile-only"
+                        >
+                            <FaBars />
+                        </button>
+                        <div style={{ color: 'var(--on-surface-variant)', fontWeight: '600' }} className="desktop-only">
+                            Bienvenido de nuevo, <span style={{ color: 'var(--on-surface)' }}>{user?.name || 'Administrador'}</span>
+                        </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                        <div style={{ position: 'relative', cursor: 'pointer' }}>
-                            <FaBell style={{ color: 'var(--on-surface-variant)' }} size={20} />
-                            <span style={{ position: 'absolute', top: '-2px', right: '-2px', width: '8px', height: '8px', background: 'var(--error)', borderRadius: '50%' }}></span>
-                        </div>
+                        <NotificationDropdown />
                         <div style={{ 
                             display: 'flex', 
                             alignItems: 'center', 

@@ -127,9 +127,51 @@ export default function InventoryManagementPage() {
 
     const getMovementTypeIcon = (type: string) => {
         switch(type) {
-            case 'IN': return <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}><FaArrowUp /> Entrada</span>;
-            case 'OUT': return <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.25rem' }}><FaArrowDown /> Salida</span>;
-            case 'ADJUSTMENT': return <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}><FaWrench /> Ajuste M.</span>;
+            case 'IN': return (
+                <span style={{ 
+                    color: '#10b981', 
+                    background: 'rgba(16, 185, 129, 0.1)', 
+                    padding: '0.35rem 0.75rem', 
+                    borderRadius: '0.5rem', 
+                    fontSize: '0.75rem', 
+                    fontWeight: '800', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '0.4rem' 
+                }}>
+                    <FaArrowUp /> ENTRADA
+                </span>
+            );
+            case 'OUT': return (
+                <span style={{ 
+                    color: '#ef4444', 
+                    background: 'rgba(239, 68, 68, 0.1)', 
+                    padding: '0.35rem 0.75rem', 
+                    borderRadius: '0.5rem', 
+                    fontSize: '0.75rem', 
+                    fontWeight: '800', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '0.4rem' 
+                }}>
+                    <FaArrowDown /> SALIDA
+                </span>
+            );
+            case 'ADJUSTMENT': return (
+                <span style={{ 
+                    color: '#f59e0b', 
+                    background: 'rgba(245, 158, 11, 0.1)', 
+                    padding: '0.35rem 0.75rem', 
+                    borderRadius: '0.5rem', 
+                    fontSize: '0.75rem', 
+                    fontWeight: '800', 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    gap: '0.4rem' 
+                }}>
+                    <FaWrench /> AJUSTE
+                </span>
+            );
             default: return <FaExchangeAlt />;
         }
     };
