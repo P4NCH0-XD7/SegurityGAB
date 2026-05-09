@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaFilter, FaBoxOpen } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { useAuthStore } from "@/store/useAuthStore";
+import { formatPrice } from "@/utils/formatters";
 
 interface Product {
     id: number;
@@ -26,6 +27,7 @@ export default function ProductsManagementPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [filterCategory, setFilterCategory] = useState<number | 'all'>('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
     const [isDeletingBulk, setIsDeletingBulk] = useState(false);
@@ -43,10 +45,6 @@ export default function ProductsManagementPage() {
 
     const { token } = useAuthStore();
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
-
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(price);
-    };
 
     useEffect(() => {
         fetchProducts();
@@ -209,10 +207,12 @@ export default function ProductsManagementPage() {
         }
     };
 
-    const filteredProducts = products.filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products.filter(p => {
+        const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+        const matchCategory = filterCategory === 'all' || p.categoryId === filterCategory;
+        return matchSearch && matchCategory;
+    });
 
     const getDisplayImageUrl = (url?: string) => {
         if (!url) return "";
@@ -313,9 +313,24 @@ export default function ProductsManagementPage() {
                         }}
                     />
                 </div>
-                <button style={{ padding: '0.75rem 1.25rem', background: 'var(--surface)', border: '1px solid var(--surface-high)', borderRadius: '0.75rem', color: 'var(--on-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FaFilter /> Filtros
-                </button>
+                <select
+                    value={filterCategory}
+                    onChange={e => setFilterCategory(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                    style={{ padding: '0.75rem 1rem', background: 'var(--surface)', border: '1px solid var(--surface-high)', borderRadius: '0.75rem', color: 'var(--on-surface)', outline: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+                >
+                    <option value="all">Todas las categorías</option>
+                    {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
+                {(filterCategory !== 'all' || searchTerm) && (
+                    <button
+                        onClick={() => { setFilterCategory('all'); setSearchTerm(''); }}
+                        style={{ padding: '0.75rem 1rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '0.75rem', color: '#dc2626', fontWeight: '700', cursor: 'pointer', fontSize: '0.82rem', whiteSpace: 'nowrap' }}
+                    >
+                        Limpiar filtros
+                    </button>
+                )}
             </div>
 
             {/* Products Table */}
@@ -368,18 +383,33 @@ export default function ProductsManagementPage() {
                                             border: '1px solid var(--surface-high)'
                                         }}>
                                             {product.imageUrl ? (
-                                                <img 
-                                                    src={getDisplayImageUrl(product.imageUrl)} 
-                                                    alt={product.name} 
+                                                <img
+                                                    src={getDisplayImageUrl(product.imageUrl)}
+                                                    alt={product.name}
                                                     referrerPolicy="no-referrer"
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     onError={(e) => {
-                                                        const target = e.target as HTMLImageElement;
-                                                        target.src = "https://via.placeholder.com/60?text=Error";
+                                                        const t = e.currentTarget;
+                                                        t.style.display = 'none';
+                                                        const parent = t.parentElement;
+                                                        if (parent && !parent.querySelector('.no-img-placeholder')) {
+                                                            const ph = document.createElement('div');
+                                                            ph.className = 'no-img-placeholder';
+                                                            ph.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:2px;';
+                                                            ph.innerHTML = `<span style="font-size:1.1rem;font-weight:900;color:var(--on-surface-variant);letter-spacing:-0.02em">${product.name.slice(0,2).toUpperCase()}</span><span style="font-size:0.45rem;font-weight:700;color:var(--on-surface-variant);opacity:0.6;text-transform:uppercase;letter-spacing:0.04em">Sin img</span>`;
+                                                            parent.appendChild(ph);
+                                                        }
                                                     }}
                                                 />
                                             ) : (
-                                                <FaBoxOpen color="var(--on-surface-variant)" size={24} />
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', gap: '3px' }}>
+                                                    <span style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--primary)', opacity: 0.7, letterSpacing: '-0.02em' }}>
+                                                        {product.name.slice(0, 2).toUpperCase()}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.45rem', fontWeight: '700', color: 'var(--on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                        Sin imagen
+                                                    </span>
+                                                </div>
                                             )}
                                         </div>
                                         <div>

@@ -202,7 +202,7 @@ export default function ProfilePage() {
                                         <FaEnvelope /> <span>{user.email}</span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem' }}>
-                                        <FaMapMarkerAlt /> <span>Medellín, Colombia</span>
+                                        <FaMapMarkerAlt /> <span>Mocoa, Colombia</span>
                                     </div>
                                 </div>
 

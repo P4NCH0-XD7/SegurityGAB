@@ -41,7 +41,7 @@ export default function Footer() {
         <div>
           <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>Contacto</h3>
           <p style={{ color: 'var(--outline-variant)', marginBottom: '0.75rem' }}>Email: info@seguritygab.com</p>
-          <p style={{ color: 'var(--outline-variant)', marginBottom: '1.5rem' }}>Tel: +1 234 567 890</p>
+          <p style={{ color: 'var(--outline-variant)', marginBottom: '1.5rem' }}>Tel: +57 300 243 2182</p>
           <div style={{ display: 'flex' }}>
             <input 
               type="text" 
@@ -70,7 +70,7 @@ export default function Footer() {
       </div>
       
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '40px', textAlign: 'center', color: 'var(--outline)', fontSize: '0.875rem' }}>
-        © 2026 SegurityGAB. Todos los derechos reservados.
+        © 2026 SegurityGAB. Todos los derechos reservados | Desarrollado por Jose Giraldo - Mora Barcenas - Ivan Aragon.
       </div>
     </footer>
   );
