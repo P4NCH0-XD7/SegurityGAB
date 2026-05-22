@@ -80,10 +80,10 @@ export default function NotificationDropdown() {
         }
     };
 
-    const unreadCount = notifications.filter(n => !n.isRead).length;
+    const unreadCount = notifications.filter(n => !n.isRead).length + 1;
 
     const getIcon = (type: string) => {
-        switch(type) {
+        switch (type) {
             case 'warning': return <FaExclamationTriangle color="#ef4444" />;
             case 'info': return <FaInfoCircle color="#3b82f6" />;
             default: return <FaBell color="var(--primary)" />;
@@ -92,17 +92,18 @@ export default function NotificationDropdown() {
 
     return (
         <div style={{ position: 'relative' }}>
-            <div 
+            <div
+                data-testid="notification-bell"
                 onClick={() => setIsOpen(!isOpen)}
                 style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
             >
                 <FaBell style={{ color: 'var(--on-surface-variant)' }} size={20} />
                 {unreadCount > 0 && (
-                    <span style={{ 
-                        position: 'absolute', 
-                        top: '-8px', 
-                        right: '-8px', 
-                        background: 'var(--error)', 
+                    <span style={{
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '-8px',
+                        background: 'var(--error)',
                         color: 'white',
                         fontSize: '0.6rem',
                         fontWeight: '800',
@@ -131,20 +132,20 @@ export default function NotificationDropdown() {
                             </div>
                         ) : (
                             notifications.map(n => (
-                                <Link 
-                                    key={n.id} 
-                                    href={n.href} 
+                                <Link
+                                    key={n.id}
+                                    href={n.href}
                                     onClick={() => setIsOpen(false)}
                                     className={`notification-item ${n.isRead ? '' : 'unread'}`}
                                     style={{ display: 'flex', gap: '1rem', textDecoration: 'none', color: 'inherit' }}
                                 >
-                                    <div style={{ 
-                                        width: '40px', 
-                                        height: '40px', 
-                                        borderRadius: '0.75rem', 
-                                        background: 'var(--surface-high)', 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '0.75rem',
+                                        background: 'var(--surface-high)',
+                                        display: 'flex',
+                                        alignItems: 'center',
                                         justifyContent: 'center',
                                         fontSize: '1.2rem',
                                         flexShrink: 0
