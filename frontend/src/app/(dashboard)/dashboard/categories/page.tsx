@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaTags, FaLayerGroup } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { useAuthStore } from "@/store/useAuthStore";
+import ConfirmModal from "@/components/ConfirmModal";
+
 
 interface Category {
     id: number;
@@ -23,6 +25,9 @@ export default function CategoriesManagementPage() {
         description: "",
         parentId: undefined,
     });
+
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [categoryIdToDelete, setCategoryIdToDelete] = useState<number | null>(null);
 
     const { token } = useAuthStore();
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
@@ -104,14 +109,20 @@ export default function CategoriesManagementPage() {
                 const err = await res.json().catch(() => ({ message: "Error en la petición" }));
                 toast.error(err.message || "Error al procesar solicitud");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error de conexión con el servidor");
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Estás seguro de que deseas eliminar esta categoría? Si tiene productos, estos quedarán sin categoría asignada.")) return;
-        
+    const handleDeleteClick = (id: number) => {
+        setCategoryIdToDelete(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (categoryIdToDelete === null) return;
+        const id = categoryIdToDelete;
+
         if (!token) {
             toast.error("Error de autenticación");
             return;
@@ -132,7 +143,7 @@ export default function CategoriesManagementPage() {
                 const err = await res.json().catch(() => ({ message: "" }));
                 toast.error(err.message || "No se pudo eliminar la categoría");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error de conexión");
         }
     };
@@ -262,7 +273,7 @@ export default function CategoriesManagementPage() {
                                             <FaEdit />
                                         </button>
                                         <button 
-                                            onClick={() => handleDelete(cat.id)}
+                                            onClick={() => handleDeleteClick(cat.id)}
                                             style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', color: '#ef4444' }}
                                             title="Eliminar"
                                         >
@@ -354,6 +365,18 @@ export default function CategoriesManagementPage() {
                     </div>
                 </div>
             )}
+
+            {/* Confirm Delete Modal */}
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteConfirm}
+                title="¿Eliminar categoría?"
+                message="¿Estás seguro de que deseas eliminar esta categoría? Si tiene productos, estos quedarán sin categoría asignada."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                type="danger"
+            />
         </div>
     );
 }

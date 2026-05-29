@@ -7,6 +7,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import Navbar from "@/components/shop/Navbar";
 import Footer from "@/components/shop/Footer";
 import toast from "react-hot-toast";
+import ConfirmModal from "@/components/ConfirmModal";
+
 
 export default function ProfilePage() {
     const { user, isAuthenticated, token, logout, updateUser } = useAuthStore();
@@ -21,6 +23,9 @@ export default function ProfilePage() {
     const [isLoadingOrders, setIsLoadingOrders] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [showAllOrders, setShowAllOrders] = useState(false);
+
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [orderIdToCancel, setOrderIdToCancel] = useState<number | null>(null);
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
@@ -55,8 +60,14 @@ export default function ProfilePage() {
         return null;
     }
 
-    const handleCancelOrder = async (orderId: number) => {
-        if (!window.confirm("¿Estás seguro de que deseas cancelar este pedido?")) return;
+    const handleCancelOrderClick = (orderId: number) => {
+        setOrderIdToCancel(orderId);
+        setIsCancelModalOpen(true);
+    };
+
+    const handleCancelOrderConfirm = async () => {
+        if (orderIdToCancel === null) return;
+        const orderId = orderIdToCancel;
 
         try {
             const response = await fetch(`${API_URL}/sales/${orderId}/status`, {
@@ -82,7 +93,7 @@ export default function ProfilePage() {
                 const error = await response.json();
                 toast.error(error.message || "Error al cancelar el pedido");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error de conexión");
         }
     };
@@ -107,7 +118,7 @@ export default function ProfilePage() {
                 const error = await response.json();
                 toast.error(error.message || "Error al actualizar el perfil");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error de conexión");
         }
     };
@@ -133,80 +144,198 @@ export default function ProfilePage() {
                     <div style={{ 
                         background: 'var(--surface-lowest)', 
                         padding: '3rem 2rem', 
-                        borderRadius: 'var(--radius-lg)',
+                        borderRadius: '1.25rem',
                         height: 'fit-content',
                         textAlign: 'center',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+                        border: '1px solid var(--surface-high)'
                     }}>
                         <div style={{ 
                             width: '120px', 
                             height: '120px', 
                             background: 'var(--surface-low)', 
                             borderRadius: '50%', 
-                            margin: '0 auto 2rem',
+                            margin: '0 auto 2.25rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: 'var(--primary)',
-                            position: 'relative'
+                            position: 'relative',
+                            border: '1px solid var(--surface-high)'
                         }}>
-                            <FaUser size={60} />
+                            <FaUser size={55} />
                             <div style={{ 
                                 position: 'absolute', 
-                                bottom: 0, 
-                                right: 0, 
-                                background: 'var(--primary)', 
-                                padding: '0.4rem 0.8rem', 
-                                borderRadius: '1rem', 
+                                bottom: '-8px', 
+                                left: '50%', 
+                                transform: 'translateX(-50%)',
+                                background: user.roleId === 1 ? 'var(--primary)' : 'var(--secondary)', 
+                                padding: '0.35rem 0.85rem', 
+                                borderRadius: '2rem', 
                                 color: 'white', 
-                                fontSize: '0.7rem', 
+                                fontSize: '0.72rem', 
                                 fontWeight: '800',
-                                textTransform: 'uppercase'
+                                textTransform: 'uppercase',
+                                border: '3px solid var(--surface-lowest)',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                                whiteSpace: 'nowrap'
                             }}>
                                 {user.roleId === 1 ? 'Admin' : 'Cliente'}
                             </div>
                         </div>
 
                         {isEditing ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}>
-                                <input 
-                                    className="input" 
-                                    value={formData.name} 
-                                    onChange={e => setFormData({...formData, name: e.target.value})}
-                                    placeholder="Nombre completo"
-                                />
-                                <input 
-                                    className="input" 
-                                    value={formData.email} 
-                                    onChange={e => setFormData({...formData, email: e.target.value})}
-                                    placeholder="Correo electrónico"
-                                />
-                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                                    <button onClick={handleSave} className="btn btn-primary" style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'left', marginTop: '1rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--on-surface-variant)', marginBottom: '0.5rem', fontFamily: 'var(--font-inter), sans-serif' }}>
+                                        Nombre Completo
+                                    </label>
+                                    <input 
+                                        value={formData.name} 
+                                        onChange={e => setFormData({...formData, name: e.target.value})}
+                                        placeholder="Nombre completo"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.85rem 1rem',
+                                            borderRadius: '0.75rem',
+                                            border: '1.5px solid var(--surface-high)',
+                                            background: 'var(--surface-low)',
+                                            color: 'var(--on-surface)',
+                                            fontSize: '0.95rem',
+                                            outline: 'none',
+                                            transition: 'all 0.2s ease',
+                                            fontFamily: 'var(--font-inter), sans-serif'
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.borderColor = 'var(--primary)';
+                                            e.target.style.background = 'var(--surface-lowest)';
+                                            e.target.style.boxShadow = '0 0 0 3px rgba(17, 92, 185, 0.15)';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.target.style.borderColor = 'var(--surface-high)';
+                                            e.target.style.background = 'var(--surface-low)';
+                                            e.target.style.boxShadow = 'none';
+                                        }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--on-surface-variant)', marginBottom: '0.5rem', fontFamily: 'var(--font-inter), sans-serif' }}>
+                                        Correo Electrónico
+                                    </label>
+                                    <input 
+                                        type="email"
+                                        value={formData.email} 
+                                        onChange={e => setFormData({...formData, email: e.target.value})}
+                                        placeholder="Correo electrónico"
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.85rem 1rem',
+                                            borderRadius: '0.75rem',
+                                            border: '1.5px solid var(--surface-high)',
+                                            background: 'var(--surface-low)',
+                                            color: 'var(--on-surface)',
+                                            fontSize: '0.95rem',
+                                            outline: 'none',
+                                            transition: 'all 0.2s ease',
+                                            fontFamily: 'var(--font-inter), sans-serif'
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.borderColor = 'var(--primary)';
+                                            e.target.style.background = 'var(--surface-lowest)';
+                                            e.target.style.boxShadow = '0 0 0 3px rgba(17, 92, 185, 0.15)';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.target.style.borderColor = 'var(--surface-high)';
+                                            e.target.style.background = 'var(--surface-low)';
+                                            e.target.style.boxShadow = 'none';
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                                    <button 
+                                        onClick={handleSave} 
+                                        className="btn btn-primary" 
+                                        style={{ 
+                                            flex: 1, 
+                                            padding: '0.85rem 1.5rem',
+                                            borderRadius: '0.75rem',
+                                            fontWeight: '700',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 4px 12px rgba(17, 92, 185, 0.25)'
+                                        }}
+                                    >
                                         <FaCheck /> Guardar
                                     </button>
-                                    <button onClick={() => setIsEditing(false)} className="btn" style={{ flex: 1, background: 'var(--surface-high)' }}>
+                                    <button 
+                                        onClick={() => setIsEditing(false)} 
+                                        className="btn" 
+                                        style={{ 
+                                            flex: 1, 
+                                            padding: '0.85rem 1.5rem',
+                                            borderRadius: '0.75rem',
+                                            background: 'var(--surface-low)', 
+                                            border: '1px solid var(--surface-high)',
+                                            color: 'var(--on-surface-variant)',
+                                            fontWeight: '700',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
                                         <FaTimes /> Cancelar
                                     </button>
                                 </div>
                             </div>
                         ) : (
                             <>
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>{user.name}</h2>
-                                <p style={{ color: 'var(--on-surface-variant)', marginBottom: '2rem' }}>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem', color: 'var(--on-surface)' }}>{user.name}</h2>
+                                <p style={{ color: 'var(--on-surface-variant)', marginBottom: '2rem', fontSize: '0.9rem' }}>
                                     {user.roleId === 1 ? 'Administrador del Sistema' : 'Miembro de SegurityGAB'}
                                 </p>
                                 
-                                <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem' }}>
-                                        <FaEnvelope /> <span>{user.email}</span>
+                                <div style={{ 
+                                    textAlign: 'left', 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    gap: '0.85rem',
+                                    background: 'var(--surface-low)',
+                                    padding: '1.25rem',
+                                    borderRadius: '1rem',
+                                    border: '1px solid var(--surface-high)',
+                                    marginBottom: '2rem'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem' }}>
+                                        <FaEnvelope style={{ color: 'var(--primary)', flexShrink: 0 }} size={16} /> 
+                                        <span style={{ wordBreak: 'break-all', fontWeight: '500' }}>{user.email}</span>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem' }}>
-                                        <FaMapMarkerAlt /> <span>Mocoa, Colombia</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', color: 'var(--on-surface-variant)', fontSize: '0.9rem' }}>
+                                        <FaMapMarkerAlt style={{ color: 'var(--primary)', flexShrink: 0 }} size={16} /> 
+                                        <span style={{ fontWeight: '500' }}>Mocoa, Colombia</span>
                                     </div>
                                 </div>
 
-                                <button onClick={() => setIsEditing(true)} className="btn btn-primary" style={{ width: '100%', marginTop: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                <button 
+                                    onClick={() => setIsEditing(true)} 
+                                    className="btn btn-primary" 
+                                    style={{ 
+                                        width: '100%', 
+                                        marginTop: '0.5rem', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center', 
+                                        gap: '0.5rem',
+                                        padding: '0.85rem 1.5rem',
+                                        borderRadius: '0.75rem',
+                                        fontWeight: '700',
+                                        boxShadow: '0 4px 12px rgba(17, 92, 185, 0.25)'
+                                    }}
+                                >
                                     <FaEdit /> Editar Perfil
                                 </button>
 
@@ -218,14 +347,27 @@ export default function ProfilePage() {
                                     className="btn" 
                                     style={{ 
                                         width: '100%', 
-                                        marginTop: '1rem', 
+                                        marginTop: '0.75rem', 
                                         display: 'flex', 
                                         alignItems: 'center', 
                                         justifyContent: 'center', 
                                         gap: '0.5rem',
-                                        background: 'rgba(255, 68, 68, 0.1)',
-                                        color: '#ff4444',
-                                        border: '1px solid #ff4444'
+                                        background: 'rgba(239, 68, 68, 0.08)',
+                                        color: '#ef4444',
+                                        borderRadius: '0.75rem',
+                                        fontWeight: '700',
+                                        padding: '0.85rem 1.5rem',
+                                        border: '1.5px solid rgba(239, 68, 68, 0.15)',
+                                        transition: 'all 0.2s ease',
+                                        cursor: 'pointer'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+                                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.15)';
                                     }}
                                 >
                                     <FaSignOutAlt /> Cerrar Sesión
@@ -484,7 +626,7 @@ export default function ProfilePage() {
 
                             {selectedOrder.status === 'PENDING' && (
                                 <button 
-                                    onClick={() => handleCancelOrder(selectedOrder.id)}
+                                    onClick={() => handleCancelOrderClick(selectedOrder.id)}
                                     style={{ 
                                         marginTop: '2rem',
                                         padding: '1rem',
@@ -518,6 +660,18 @@ export default function ProfilePage() {
             )}
 
             <Footer />
+
+            {/* Confirm Cancel Order Modal */}
+            <ConfirmModal
+                isOpen={isCancelModalOpen}
+                onClose={() => setIsCancelModalOpen(false)}
+                onConfirm={handleCancelOrderConfirm}
+                title="¿Cancelar pedido?"
+                message="¿Estás seguro de que deseas cancelar este pedido? Esta acción detendrá el procesamiento del mismo."
+                confirmText="Sí, cancelar"
+                cancelText="No, mantener"
+                type="warning"
+            />
         </div>
     );
 }
