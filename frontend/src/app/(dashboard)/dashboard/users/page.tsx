@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { FaUserPlus, FaUserEdit, FaUserShield, FaSearch, FaUser, FaTrash } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { useAuthStore } from "@/store/useAuthStore";
+import ConfirmModal from "@/components/ConfirmModal";
+
 
 interface User {
     id: number;
@@ -26,6 +28,9 @@ export default function UsersManagementPage() {
         roleId: 2,
         isActive: true
     });
+
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [userIdToDelete, setUserIdToDelete] = useState<number | null>(null);
 
     const { token } = useAuthStore();
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
@@ -109,13 +114,19 @@ export default function UsersManagementPage() {
                 const err = await res.json();
                 toast.error(err.message || "Error al guardar");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error de conexión");
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
+    const handleDeleteClick = (id: number) => {
+        setUserIdToDelete(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (userIdToDelete === null) return;
+        const id = userIdToDelete;
 
         try {
             const res = await fetch(`${API_URL}/users/${id}`, {
@@ -131,7 +142,7 @@ export default function UsersManagementPage() {
             } else {
                 toast.error("Error al eliminar");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error de conexión");
         }
     };
@@ -260,7 +271,7 @@ export default function UsersManagementPage() {
                                             <FaUserEdit />
                                         </button>
                                         <button 
-                                            onClick={() => handleDelete(user.id)}
+                                            onClick={() => handleDeleteClick(user.id)}
                                             style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', color: '#ef4444' }}
                                         >
                                             <FaTrash />
@@ -375,6 +386,18 @@ export default function UsersManagementPage() {
                     </div>
                 </div>
             )}
+
+            {/* Confirm Delete Modal */}
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteConfirm}
+                title="¿Eliminar usuario?"
+                message="¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                type="danger"
+            />
         </div>
     );
 }

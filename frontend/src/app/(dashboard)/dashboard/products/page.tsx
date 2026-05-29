@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaFilter, FaBoxOpen } from "react-icons/fa";
-import { toast } from "react-hot-toast";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatPrice } from "@/utils/formatters";
+import { toast } from "react-hot-toast";
+import ConfirmModal from "@/components/ConfirmModal";
+
 
 interface Product {
     id: number;
@@ -32,6 +34,17 @@ export default function ProductsManagementPage() {
     const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
     const [isDeletingBulk, setIsDeletingBulk] = useState(false);
     const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
+
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteModalConfig, setDeleteModalConfig] = useState<{
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        title: "",
+        message: "",
+        onConfirm: () => {}
+    });
     const [formData, setFormData] = useState<Partial<Product>>({
         name: "",
         description: "",
@@ -146,9 +159,16 @@ export default function ProductsManagementPage() {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm("¿Estás seguro de que deseas eliminar este producto?")) return;
-        
+    const handleDeleteClick = (id: number) => {
+        setDeleteModalConfig({
+            title: "¿Eliminar producto?",
+            message: "¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.",
+            onConfirm: () => executeDelete(id)
+        });
+        setIsDeleteModalOpen(true);
+    };
+
+    const executeDelete = async (id: number) => {
         try {
             const res = await fetch(`${API_URL}/products/${id}`, {
                 method: 'DELETE',
@@ -163,14 +183,21 @@ export default function ProductsManagementPage() {
             } else {
                 toast.error("Error al eliminar el producto");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error de conexión");
         }
     };
 
-    const handleDeleteSelected = async () => {
-        if (!confirm(`¿Estás seguro de eliminar ${selectedProducts.length} productos seleccionados?`)) return;
-        
+    const handleDeleteSelectedClick = () => {
+        setDeleteModalConfig({
+            title: "¿Eliminar productos seleccionados?",
+            message: `¿Estás seguro de eliminar ${selectedProducts.length} productos seleccionados? Esta acción no se puede deshacer.`,
+            onConfirm: executeDeleteSelected
+        });
+        setIsDeleteModalOpen(true);
+    };
+
+    const executeDeleteSelected = async () => {
         setIsDeletingBulk(true);
         try {
             // El backend usualmente no tiene delete bulk, así que lo hacemos secuencial o paralelamente
@@ -186,7 +213,7 @@ export default function ProductsManagementPage() {
             toast.success(`${selectedProducts.length} productos eliminados`);
             setSelectedProducts([]);
             fetchProducts();
-        } catch (error) {
+        } catch {
             toast.error("Error al eliminar algunos productos");
         } finally {
             setIsDeletingBulk(false);
@@ -269,7 +296,7 @@ export default function ProductsManagementPage() {
                     </div>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         <button 
-                            onClick={handleDeleteSelected}
+                            onClick={handleDeleteSelectedClick}
                             disabled={isDeletingBulk}
                             style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.5rem 1.5rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}
                         >
@@ -451,7 +478,7 @@ export default function ProductsManagementPage() {
                                             <FaEdit />
                                         </button>
                                         <button 
-                                            onClick={() => handleDelete(product.id)}
+                                            onClick={() => handleDeleteClick(product.id)}
                                             style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer', color: '#ef4444' }}
                                         >
                                             <FaTrash />
@@ -630,6 +657,18 @@ export default function ProductsManagementPage() {
                     </div>
                 </div>
             )}
+
+            {/* Confirm Delete Modal */}
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={deleteModalConfig.onConfirm}
+                title={deleteModalConfig.title}
+                message={deleteModalConfig.message}
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                type="danger"
+            />
         </div>
     );
 }
