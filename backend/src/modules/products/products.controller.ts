@@ -46,7 +46,8 @@ export class ProductsController {
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(1)
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+  remove(@Param('id') id: string, @Query('hard') hard?: string) {
+    const hardDelete = hard === 'true' || hard === '1';
+    return this.productsService.remove(+id, hardDelete);
   }
 }

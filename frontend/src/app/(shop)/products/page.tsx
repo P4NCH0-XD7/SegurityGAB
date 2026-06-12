@@ -14,6 +14,10 @@ export default function ProductsPage() {
 
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [activeCat, setActiveCat] = useState<number | null>(null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const ITEMS_PER_PAGE = 6;
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 
@@ -42,6 +46,8 @@ export default function ProductsPage() {
                           price: Number(p.price),
                           stock: Number(p.stock),
                           image: getDisplayImageUrl(p.imageUrl) || "/products/placeholder.png", // fallback image
+                          categoryId: p.categoryId ?? (p.category && p.category.id) ?? null,
+                          categoryName: (p.category && p.category.name) || ''
                       }));
                     setProducts(visible);
                 }
@@ -54,10 +60,32 @@ export default function ProductsPage() {
         fetchAllVisibleProducts();
     }, [API_URL]);
 
+    useEffect(() => {
+    const fetchCategories = async () => {
+        try {
+            const res = await fetch(`${API_URL}/categories`);
+            if (res.ok) {
+                const data = await res.json();
+                setCategories(data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        }
+    };
+    fetchCategories();
+    }, [API_URL]);
+
     const handleAddToCart = (product: any) => {
         addItem(product);
         toast.success(`${product.title} añadido al carrito`);
     };
+
+    const filteredProducts = activeCat ? products.filter(p => p.categoryId === activeCat) : products;
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const displayedProducts = filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    useEffect(() => { setCurrentPage(1); }, [activeCat, products]);
 
     return (
         <div style={{ background: 'var(--surface)' }}>
@@ -68,10 +96,21 @@ export default function ProductsPage() {
                     <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--on-surface-variant)', fontSize: '1.25rem' }}>
                         Cargando catálogo...
                     </div>
-                ) : products.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
-                        {products.map(product => (
-                            <div key={product.id} className="product-card" style={{ background: 'var(--surface-lowest)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                ) : filteredProducts.length > 0 ? (
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '1rem', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <select value={activeCat ?? ''} onChange={e => setActiveCat(e.target.value ? Number(e.target.value) : null)}
+                                style={{ padding: '0.6rem 0.9rem', borderRadius: '0.6rem', border: '1px solid var(--surface-high)', background: 'var(--surface-low)', color: 'var(--on-surface)', fontWeight: 700 }}>
+                                <option value="">Todas las categorías</option>
+                                {categories.map((c: any) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
+                            {displayedProducts.map(product => (
+                                <div key={product.id} className="product-card" style={{ background: 'var(--surface-lowest)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                                 <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                                     <div style={{ height: '240px', background: 'var(--surface-high)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                                         <img 
@@ -129,6 +168,27 @@ export default function ProductsPage() {
                             </div>
                         ))}
                     </div>
+
+                        <div style={{ display:'flex', justifyContent:'center', gap:'0.5rem', marginTop:'1.5rem', alignItems:'center' }}>
+                            <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1}
+                                style={{ padding:'0.45rem 0.75rem', borderRadius:'0.5rem', border:'1px solid var(--surface-high)', background: currentPage===1 ? 'var(--surface-low)' : 'var(--primary)', color: currentPage===1 ? 'var(--on-surface-variant)' : 'white', cursor: currentPage===1 ? 'not-allowed' : 'pointer' }}>
+                                « Anterior
+                            </button>
+
+                            {Array.from({length: totalPages}, (_, i) => i+1).map(pg => (
+                                <button key={pg} onClick={() => setCurrentPage(pg)}
+                                    style={{ padding:'0.45rem 0.75rem', borderRadius:'0.5rem', border:'1px solid var(--surface-high)', background: pg===currentPage ? 'var(--primary)' : 'var(--surface-low)', color: pg===currentPage ? 'white' : 'var(--on-surface)', cursor: 'pointer' }}>
+                                    {pg}
+                                </button>
+                            ))}
+
+                            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage === totalPages}
+                                style={{ padding:'0.45rem 0.75rem', borderRadius:'0.5rem', border:'1px solid var(--surface-high)', background: currentPage===totalPages ? 'var(--surface-low)' : 'var(--primary)', color: currentPage===totalPages ? 'var(--on-surface-variant)' : 'white', cursor: currentPage===totalPages ? 'not-allowed' : 'pointer' }}>
+                                Siguiente »
+                            </button>
+                        </div>
+
+                        </>
                 ) : (
                     <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--on-surface-variant)', fontSize: '1.25rem' }}>
                         No hay productos disponibles en el catálogo.

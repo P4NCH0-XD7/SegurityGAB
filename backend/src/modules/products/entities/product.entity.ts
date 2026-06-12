@@ -62,9 +62,9 @@ export class Product {
     deletedAt: Date;
 
     @BeforeInsert()
-    @BeforeUpdate()
     generateSlug() {
-        if (this.name) {
+        // Only auto-generate slug if it's not already set by the service/controller.
+        if (!this.slug && this.name) {
             this.slug = this.name
                 .toLowerCase()
                 .trim()
