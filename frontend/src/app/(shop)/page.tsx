@@ -62,7 +62,7 @@ export default function LandingPage() {
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
     const matchCat    = activeCat === null || p.categoryId === activeCat;
     return matchSearch && matchCat;
-  }).slice(0, 8);
+  }).slice(0, 6);
 
   const handleAdd = (p: any) => {
     addItem({ id: p.id, title: p.name, price: Number(p.price), image: p.imageUrl || '' });
@@ -171,11 +171,21 @@ export default function LandingPage() {
               </h2>
               <p style={{ color:'var(--on-surface-variant)', fontSize:'0.85rem', margin:'0.25rem 0 0' }}>{filtered.length} productos disponibles</p>
             </div>
-            <div style={{ position:'relative', maxWidth:'320px', flex:1 }}>
-              <FaSearch style={{ position:'absolute', left:'1rem', top:'50%', transform:'translateY(-50%)', color:'var(--on-surface-variant)' }}/>
-              <input value={search} onChange={e=>setSearch(e.target.value)}
-                placeholder="Buscar producto..."
-                style={{ width:'100%', padding:'0.75rem 1rem 0.75rem 3rem', background:'var(--surface-low)', border:'1px solid var(--surface-high)', borderRadius:'0.85rem', color:'var(--on-surface)', outline:'none', fontSize:'0.9rem' }}/>
+            <div style={{ display:'flex', gap:'0.75rem', alignItems:'center', flex:1, minWidth:0 }}>
+              <select value={activeCat ?? ''} onChange={e=>setActiveCat(e.target.value ? Number(e.target.value) : null)}
+                style={{ padding:'0.6rem 0.9rem', borderRadius:'0.85rem', border:'1px solid var(--surface-high)', background:'var(--surface-low)', color:'var(--on-surface)', fontWeight:'700', cursor:'pointer' }}>
+                <option value="">Todas las categorías</option>
+                {categories.map((c:any) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+
+              <div style={{ position:'relative', flex:1, minWidth:0 }}>
+                <FaSearch style={{ position:'absolute', left:'1rem', top:'50%', transform:'translateY(-50%)', color:'var(--on-surface-variant)' }}/>
+                <input value={search} onChange={e=>setSearch(e.target.value)}
+                  placeholder="Buscar producto..."
+                  style={{ width:'100%', padding:'0.75rem 1rem 0.75rem 3rem', background:'var(--surface-low)', border:'1px solid var(--surface-high)', borderRadius:'0.85rem', color:'var(--on-surface)', outline:'none', fontSize:'0.9rem', minWidth:0 }}/>
+              </div>
             </div>
           </div>
 
@@ -253,7 +263,7 @@ export default function LandingPage() {
               })}
             </div>
           )}
-          {filtered.length >= 8 && (
+          {filtered.length >= 6 && (
             <div style={{ textAlign:'center', marginTop:'3rem' }}>
               <Link href="/products" style={{ padding:'0.9rem 2.5rem', background:'var(--surface-low)', border:'2px solid var(--surface-high)', borderRadius:'0.85rem', color:'var(--on-surface)', textDecoration:'none', fontWeight:'700', display:'inline-block' }}>
                 Ver catálogo completo →

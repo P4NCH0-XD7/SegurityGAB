@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Response } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 
@@ -11,6 +11,28 @@ export class ProductsService {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
   ) {}
+
+  private normalizeSlug(name: string) {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  private async generateUniqueSlug(name: string, excludeId?: number): Promise<string> {
+    const base = this.normalizeSlug(name);
+    let slug = base;
+    let i = 1;
+    while (true) {
+      const where: any = { slug };
+      if (excludeId) where.id = Not(excludeId);
+      const existing = await this.productRepository.findOne({ where });
+      if (!existing) return slug;
+      slug = `${base}-${i++}`;
+    }
+  }
 
   async findAll(): Promise<Product[]> {
     return this.productRepository.find({ relations: ['category'] });
@@ -25,19 +47,33 @@ export class ProductsService {
   }
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    const product = this.productRepository.create(createProductDto);
+    // Ensure slug uniqueness before saving
+    const slug = await this.generateUniqueSlug(createProductDto.name);
+    const product = this.productRepository.create({ ...createProductDto, slug });
     return this.productRepository.save(product);
   }
 
   async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
     const product = await this.findOne(id);
-    const updated = this.productRepository.merge(product, updateProductDto);
+    // If name is being updated, regenerate slug ensuring uniqueness
+    if (updateProductDto.name) {
+      const slug = await this.generateUniqueSlug(updateProductDto.name, id);
+      updateProductDto = { ...updateProductDto, } as UpdateProductDto;
+      (updateProductDto as any).slug = slug;
+    }
+    const updated = this.productRepository.merge(product, updateProductDto as any);
     return this.productRepository.save(updated);
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number, hard = false): Promise<void> {
     const product = await this.findOne(id);
-    await this.productRepository.softRemove(product);
+    if (hard) {
+      // permanent delete
+      await this.productRepository.remove(product);
+    } else {
+      // soft delete
+      await this.productRepository.softRemove(product);
+    }
   }
 
   async proxyImage(url: string, res: Response) {
